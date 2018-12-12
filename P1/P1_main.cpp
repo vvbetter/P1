@@ -1,11 +1,15 @@
 #include <iostream>
 #include <string>
-#include "ConfigManager.h"
+#include <Windows.h>
+#include <sstream>
 using namespace std;
+
+
+
+
 
 int main()
 {
-	ConfigManager::Instance().ParseConfigFile(CFG_FILE);
-	cout << ConfigManager::Instance().GetServerInfo().ip << endl;
+	cout << GetTimeString() << endl;
 	return 0;
 }

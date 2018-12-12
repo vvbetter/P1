@@ -25,5 +25,6 @@ public:
 	const ServerInfo& GetServerInfo() { return _serverInfo; }
 private:
 	ServerInfo _serverInfo;
+	
 };
 

@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="日志">
+      <UniqueIdentifier>{0d1536d6-b307-41c9-aaa9-cf5a46292b01}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -33,6 +36,12 @@
     <ClInclude Include="IOCPService.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="TraceLog.h">
+      <Filter>日志</Filter>
+    </ClInclude>
+    <ClInclude Include="common.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -43,6 +52,9 @@
     </ClCompile>
     <ClCompile Include="IOCPService.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="TraceLog.cpp">
+      <Filter>日志</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -12,6 +12,7 @@ IOCPService::IOCPService()
 
 IOCPService::~IOCPService()
 {
+	CloseHandle(_IocpHandle);
 }
 
 unsigned  __stdcall IOCPService::CompletionPortThread(LPVOID lParam)
@@ -37,8 +38,8 @@ unsigned  __stdcall IOCPService::CompletionPortThread(LPVOID lParam)
 		}
 		// Get the base address of the RECEIVE_CONTEXT structure   
 		// containing the OVERLAPPED structure received.  
-		IOCP_CONTEXT* prc = CONTAINING_RECORD(pov, IOCP_CONTEXT, ov);
-		IIOCP_CompletionKey* pKey = (IIOCP_CompletionKey*)ulKey;
+		IOCP_CompletionKey* pKey = (IOCP_CompletionKey*)ulKey;
+		
 
 	}
 	return 0;
