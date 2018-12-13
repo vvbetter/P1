@@ -4,22 +4,18 @@
 #include <Windows.h>
 
 
-__interface IIOCPTaskInterface
+class IIOCPTaskInterface
 {
+public:
 	virtual void IocpCallBack(LPVOID) = 0;
 	virtual bool InitIocpTask() = 0;
 };
-typedef void(IIOCPTaskInterface::*CallBackFunction)(LPVOID);
 
 struct IOCP_CONTEXT
 {
 	OVERLAPPED ov;
 };
-
-struct IOCP_CompletionKey
-{
-	CallBackFunction callback;
-};
+typedef void(IIOCPTaskInterface::*CallBackFunction)(LPVOID);
 
 #endif // !_P1_INTERFACE
 

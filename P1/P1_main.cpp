@@ -1,15 +1,13 @@
 #include <iostream>
-#include <string>
-#include <Windows.h>
-#include <sstream>
+#include "IOCPService.h"
+
 using namespace std;
-
-
-
 
 
 int main()
 {
-	cout << GetTimeString() << endl;
+	IOCPService io;
+	io.InitService();
+
 	return 0;
 }

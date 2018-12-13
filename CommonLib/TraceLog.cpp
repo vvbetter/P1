@@ -3,11 +3,38 @@
 #include "common.hpp"
 #include <sstream>
 #include <WinSock2.h>
+#include <process.h>
 
-struct LogContext :public IOCP_CONTEXT
+unsigned int TraceLog::TraceLogThread(LPVOID lParam)
 {
-
-};
+	TraceLog* pThis = (TraceLog*)lParam;
+	string log = "";
+	DWORD bytesWrited;
+	while (pThis->_runFlag)
+	{
+		{
+			EnterCriticalSection(&pThis->_cs);
+			if (pThis->_logList.size() > 0)
+			{
+				log = pThis->_logList.front();
+				pThis->_logList.pop_front();
+			}
+			LeaveCriticalSection(&pThis->_cs);
+		}
+		/*
+			这只有一个线程，不存在线程重入的问题，否则需要考虑 ov的重入。
+		*/
+		if (log != "")
+		{
+			DWORD bytesToWrite = log.length();
+			WriteFile(pThis->_fileHandle, log.c_str(), bytesToWrite, &bytesWrited, &pThis->_pLogContext->ov);
+			pThis->_pLogContext->ov.Offset += bytesToWrite;
+		}
+		log = "";
+		Sleep(1);
+	}
+	return 0;
+}
 
 TraceLog TraceLog::Instance()
 {
@@ -19,11 +46,13 @@ void TraceLog::IocpCallBack(LPVOID lParam)
 {
 	IOCP_CONTEXT* pResult = (IOCP_CONTEXT*)lParam;
 	LogContext* p = CONTAINING_RECORD(pResult, LogContext, ov);
+	return;
 }
 
 bool TraceLog::InitIocpTask()
 {
-	_logFile = GetTimeString();
+	//创建日志文件
+	_logFile = "Log_" + GetTimeString();
 	wchar_t* pfilename = multiByteToWideChar(_logFile);
 	_fileHandle = CreateFile(pfilename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_FLAG_OVERLAPPED, NULL);
 	SAFE_DELETE_ARR(pfilename);
@@ -32,42 +61,32 @@ bool TraceLog::InitIocpTask()
 		cout << "创建日志文件失败,error code:" << GetLastError() << endl;
 		return false;
 	}
+	_pLogContext = new LogContext();
+	memset(_pLogContext, 0, sizeof(LogContext));
+	//初始化临界区
+	InitializeCriticalSection(&_cs);
+	//创建日志线程
+	_runFlag = true;
+	_beginthreadex(NULL, 0, TraceLogThread, this, 0, NULL);
 	return true;
+}
+
+bool TraceLog::TRACELOG(stringstream is, TRACELOG_LEVEL lv)
+{
+	EnterCriticalSection(&_cs);
+	_logList.push_back(is.str());
+	LeaveCriticalSection(&_cs);
+	return false;
 }
 
 TraceLog::TraceLog()
 {
-	
+	_runFlag = false;
 }
-
 
 TraceLog::~TraceLog()
 {
 	CloseHandle(_fileHandle);
+	SAFE_DELETE(_pLogContext);
 }
 
-const string TraceLog::GetTimeString()
-{
-		SYSTEMTIME st;
-		GetSystemTime(&st);
-		stringstream ss;
-		ss.width(4);
-		ss.fill('0');
-		ss << st.wYear;
-		ss.width(2);
-		ss.fill('0');
-		ss << st.wMonth;
-		ss.width(2);
-		ss.fill('0');
-		ss << st.wDay;
-		ss.width(2);
-		ss.fill('0');
-		ss << st.wHour + 8;
-		ss.width(2);
-		ss.fill('0');
-		ss << st.wMinute;
-		ss.width(2);
-		ss.fill('0');
-		ss << st.wSecond;
-		return ss.str();
-}

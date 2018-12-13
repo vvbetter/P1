@@ -38,9 +38,9 @@ unsigned  __stdcall IOCPService::CompletionPortThread(LPVOID lParam)
 		}
 		// Get the base address of the RECEIVE_CONTEXT structure   
 		// containing the OVERLAPPED structure received.  
-		IOCP_CompletionKey* pKey = (IOCP_CompletionKey*)ulKey;
-		
-
+		IIOCPTaskInterface* pBase = (IIOCPTaskInterface*)ulKey;
+		CallBackFunction callback = pBase->IocpCallBack;
+		(pBase->*callback)(pov);
 	}
 	return 0;
 }
@@ -66,7 +66,7 @@ bool IOCPService::InitService()
 	return false;
 }
 
-bool IOCPService::RegisterHandle(HANDLE handle, LPVOID CompletionKey)
+bool IOCPService::RegisterHandle(HANDLE handle, IIOCPTaskInterface* CompletionKey)
 {
 	if (NULL == _IocpHandle)
 	{

@@ -23,3 +23,29 @@ char* wideCharToMultiByte(wchar_t* pWCStrKey)
 	pCStrKey[pSize] = '\0';
 	return pCStrKey;
 }
+
+static string GetTimeString()
+{
+	SYSTEMTIME st;
+	GetSystemTime(&st);
+	stringstream ss;
+	ss.width(4);
+	ss.fill('0');
+	ss << st.wYear;
+	ss.width(2);
+	ss.fill('0');
+	ss << st.wMonth;
+	ss.width(2);
+	ss.fill('0');
+	ss << st.wDay;
+	ss.width(2);
+	ss.fill('0');
+	ss << st.wHour + 8;
+	ss.width(2);
+	ss.fill('0');
+	ss << st.wMinute;
+	ss.width(2);
+	ss.fill('0');
+	ss << st.wSecond;
+	return ss.str();
+}
