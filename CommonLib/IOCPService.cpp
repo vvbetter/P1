@@ -40,7 +40,7 @@ unsigned  __stdcall IOCPService::CompletionPortThread(LPVOID lParam)
 		// containing the OVERLAPPED structure received.  
 		IIOCPTaskInterface* pBase = (IIOCPTaskInterface*)ulKey;
 		if (NULL == pBase) continue;
-		CallBackFunction callback = &IIOCPTaskInterface::IocpCallBack; // pBase->IocpCallBack;
+		CallBackFunction callback = &IIOCPTaskInterface::IocpCallBack;
 		(pBase->*callback)(pov);
 	}
 	return 0;

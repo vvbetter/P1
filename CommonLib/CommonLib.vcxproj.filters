@@ -19,6 +19,9 @@
     <Filter Include="服务器启动器">
       <UniqueIdentifier>{daa78e51-d6b2-416b-8c5a-f915e89189e2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="网络">
+      <UniqueIdentifier>{f45ea53e-ec46-4f84-a21e-2eaa3a1c4443}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -48,6 +51,12 @@
     <ClInclude Include="P1_Service.h">
       <Filter>服务器启动器</Filter>
     </ClInclude>
+    <ClInclude Include="NetServiceTask.h">
+      <Filter>网络</Filter>
+    </ClInclude>
+    <ClInclude Include="UDPServer.h">
+      <Filter>网络</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -64,6 +73,12 @@
     </ClCompile>
     <ClCompile Include="P1_Service.cpp">
       <Filter>服务器启动器</Filter>
+    </ClCompile>
+    <ClCompile Include="NetServiceTask.cpp">
+      <Filter>网络</Filter>
+    </ClCompile>
+    <ClCompile Include="UDPServer.cpp">
+      <Filter>网络</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

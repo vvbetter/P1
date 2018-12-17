@@ -29,7 +29,7 @@ public:
 	const HANDLE GetHanlde() { return _fileHandle; }
 public:
 	TraceLog();
-	~TraceLog();
+	virtual ~TraceLog();
 private:
 	bool _runFlag;
 	string _logFile;
