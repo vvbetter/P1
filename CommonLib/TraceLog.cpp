@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "TraceLog.h"
 #include "common.hpp"
+#include "IOCPService.h"
 #include <sstream>
 #include <WinSock2.h>
 #include <process.h>
@@ -46,10 +47,11 @@ void TraceLog::IocpCallBack(LPVOID lParam)
 {
 	IOCP_CONTEXT* pResult = (IOCP_CONTEXT*)lParam;
 	LogContext* p = CONTAINING_RECORD(pResult, LogContext, ov);
+	//std::cout << "raceLog::IocpCallBack" << std::endl;
 	return;
 }
 
-bool TraceLog::InitIocpTask()
+bool TraceLog::InitIocpTask(IOCPService* io_service)
 {
 	//创建日志文件
 	_logFile = "Log_" + GetTimeString();
@@ -68,10 +70,17 @@ bool TraceLog::InitIocpTask()
 	//创建日志线程
 	_runFlag = true;
 	_beginthreadex(NULL, 0, TraceLogThread, this, 0, NULL);
+	//注册IOCP服务
+	bool rst = io_service->RegisterHandle(_fileHandle, this);
+	if (false == rst)
+	{
+		cout << "TraceLog注册IOCP服务失败" << endl;
+		return false;
+	}
 	return true;
 }
 
-bool TraceLog::TRACELOG(stringstream is, TRACELOG_LEVEL lv)
+bool TraceLog::TRACELOG(stringstream& is, TRACELOG_LEVEL lv)
 {
 	EnterCriticalSection(&_cs);
 	_logList.push_back(is.str());
@@ -86,6 +95,7 @@ TraceLog::TraceLog()
 
 TraceLog::~TraceLog()
 {
+	_runFlag = false;
 	CloseHandle(_fileHandle);
 	SAFE_DELETE(_pLogContext);
 }

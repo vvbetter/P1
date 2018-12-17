@@ -16,6 +16,9 @@
     <Filter Include="日志">
       <UniqueIdentifier>{0d1536d6-b307-41c9-aaa9-cf5a46292b01}</UniqueIdentifier>
     </Filter>
+    <Filter Include="服务器启动器">
+      <UniqueIdentifier>{daa78e51-d6b2-416b-8c5a-f915e89189e2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -42,6 +45,9 @@
     <ClInclude Include="common.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="P1_Service.h">
+      <Filter>服务器启动器</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -55,6 +61,9 @@
     </ClCompile>
     <ClCompile Include="TraceLog.cpp">
       <Filter>日志</Filter>
+    </ClCompile>
+    <ClCompile Include="P1_Service.cpp">
+      <Filter>服务器启动器</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

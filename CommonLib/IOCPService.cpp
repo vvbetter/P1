@@ -32,14 +32,15 @@ unsigned  __stdcall IOCPService::CompletionPortThread(LPVOID lParam)
 			&pov,          // OVERLAPPED structure  
 			INFINITE       // Notification time-out interval  
 		);
-		if (pov == NULL)
+		if (NULL == pov)
 		{
 			continue;
 		}
 		// Get the base address of the RECEIVE_CONTEXT structure   
 		// containing the OVERLAPPED structure received.  
 		IIOCPTaskInterface* pBase = (IIOCPTaskInterface*)ulKey;
-		CallBackFunction callback = pBase->IocpCallBack;
+		if (NULL == pBase) continue;
+		CallBackFunction callback = &IIOCPTaskInterface::IocpCallBack; // pBase->IocpCallBack;
 		(pBase->*callback)(pov);
 	}
 	return 0;
@@ -63,7 +64,7 @@ bool IOCPService::InitService()
 		unsigned int threadid = 0;
 		HANDLE p =(HANDLE)_beginthreadex(NULL, 0, CompletionPortThread, &_IocpHandle, 0, &threadid);
 	}
-	return false;
+	return true;
 }
 
 bool IOCPService::RegisterHandle(HANDLE handle, IIOCPTaskInterface* CompletionKey)

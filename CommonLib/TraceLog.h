@@ -24,14 +24,12 @@ public:
 	
 	static TraceLog Instance();
 	virtual void IocpCallBack(LPVOID);
-	virtual bool InitIocpTask();
-	bool TRACELOG(stringstream is, TRACELOG_LEVEL lv = LOG_DEBUG);
+	virtual bool InitIocpTask(IOCPService* io_service);
+	bool TRACELOG(stringstream& is, TRACELOG_LEVEL lv = LOG_DEBUG);
 	const HANDLE GetHanlde() { return _fileHandle; }
-private:
+public:
 	TraceLog();
 	~TraceLog();
-	TraceLog(const TraceLog&);
-	TraceLog& operator= (const TraceLog&);
 private:
 	bool _runFlag;
 	string _logFile;
