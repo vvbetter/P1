@@ -1,8 +1,11 @@
 #pragma once
 #ifndef _P1_INTERFACE
 #define _P1_INTERFACE
-#include <Windows.h>
+#include <WinSock2.h>
 #include <WS2tcpip.h>
+#include <Windows.h>
+
+constexpr UINT32 SOCKET_BUFFER_SIZE = 1024*1024;
 
 class IOCPService;
 
@@ -29,6 +32,9 @@ class INetServer
 struct NET_CONTEXT : public IOCP_CONTEXT
 {
 	WSABUF wsaBuf;
+	char buf[SOCKET_BUFFER_SIZE];
+	HANDLE s;
+	INetServer* pNetServer;
 };
 
 #endif // !_P1_INTERFACE

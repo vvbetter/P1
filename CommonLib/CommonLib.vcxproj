@@ -23,7 +23,7 @@
     <ProjectGuid>{F172BC6C-851A-4DBA-B537-6879250DB1D1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>CommonLib</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -158,6 +158,8 @@
     <ClInclude Include="SafeArray.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="TCPServer.h" />
+    <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="TraceLog.h" />
     <ClInclude Include="UDPServer.h" />
   </ItemGroup>
@@ -172,6 +174,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TCPServer.cpp" />
+    <ClCompile Include="ThreadPool.cpp" />
     <ClCompile Include="TraceLog.cpp" />
     <ClCompile Include="UDPServer.cpp" />
   </ItemGroup>

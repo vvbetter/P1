@@ -1,12 +1,20 @@
 #pragma once
-#include <Windows.h>
+#ifndef __COMMMON_HPP__
+#define __COMMMON_HPP__
+
+
+#include "Interface.h"
 #include <string>
+#include <iostream>
+#include <sstream>
 
 #define SAFE_DELETE(x) if(x){delete (x); (x) = NULL;}
 #define SAFE_DELETE_ARR(x) if(x){ delete[] (x); (x) = NULL; }
 
+#define P1_LOG(x) \
+		{std::cout<<x <<std::endl;}
 
-wchar_t *multiByteToWideChar(const std::string& pKey)
+inline wchar_t *multiByteToWideChar(const std::string& pKey)
 {
 	const char* pCStrKey = pKey.c_str();
 	int pSize = MultiByteToWideChar(CP_OEMCP, 0, pCStrKey, strlen(pCStrKey) + 1, NULL, 0);
@@ -15,7 +23,7 @@ wchar_t *multiByteToWideChar(const std::string& pKey)
 	return pWCStrKey;
 }
 
-char* wideCharToMultiByte(wchar_t* pWCStrKey)
+inline char* wideCharToMultiByte(wchar_t* pWCStrKey)
 {
 	int pSize = WideCharToMultiByte(CP_OEMCP, 0, pWCStrKey, wcslen(pWCStrKey), NULL, 0, NULL, NULL);
 	char* pCStrKey = new char[pSize + 1];
@@ -24,11 +32,11 @@ char* wideCharToMultiByte(wchar_t* pWCStrKey)
 	return pCStrKey;
 }
 
-static string GetTimeString()
+inline static std::string GetTimeString()
 {
 	SYSTEMTIME st;
 	GetSystemTime(&st);
-	stringstream ss;
+	std::stringstream ss;
 	ss.width(4);
 	ss.fill('0');
 	ss << st.wYear;
@@ -49,3 +57,52 @@ static string GetTimeString()
 	ss << st.wSecond;
 	return ss.str();
 }
+
+enum SOCKETTYPE
+{
+	TCP_SOCKET,
+	UDP_SOCKET
+};
+
+inline HANDLE CreateSocket(SOCKETTYPE type, UINT ip, UINT16& port, bool ov = false)
+{
+	SOCKET s = INVALID_SOCKET;
+	if (true == ov)
+	{
+		switch (type)
+		{
+		case TCP_SOCKET:
+		{
+			s = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+		}
+		case UDP_SOCKET:
+		{
+			s = WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, NULL, 0, WSA_FLAG_OVERLAPPED);
+		}
+		}
+	}
+	else
+	{
+
+	}
+	if (s != INVALID_SOCKET)
+	{
+		sockaddr_in addr;
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(port);
+		addr.sin_addr.S_un.S_addr = htonl(ip);
+		int ret = bind(s, (SOCKADDR*)&addr, sizeof(SOCKADDR_IN));
+		if (ret == SOCKET_ERROR)
+		{
+			P1_LOG("Bind Socket Error:" << WSAGetLastError())
+				closesocket(s);
+			s = INVALID_SOCKET;
+		}
+	}
+	else
+	{
+		P1_LOG("CreateSocket Failed");
+	}
+	return (HANDLE)s;
+}
+#endif // !__COMMMON_HPP__

@@ -2,7 +2,6 @@
 #include "NetServiceTask.h"
 #include "IOCPService.h"
 #include <iostream>
-#include <WinSock2.h>
 
 void NetServiceTask::IocpCallBack(LPVOID)
 {

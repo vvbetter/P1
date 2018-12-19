@@ -22,6 +22,9 @@
     <Filter Include="网络">
       <UniqueIdentifier>{f45ea53e-ec46-4f84-a21e-2eaa3a1c4443}</UniqueIdentifier>
     </Filter>
+    <Filter Include="线程池">
+      <UniqueIdentifier>{5fface12-2063-40da-a0d0-ae8a77f12661}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -57,6 +60,12 @@
     <ClInclude Include="UDPServer.h">
       <Filter>网络</Filter>
     </ClInclude>
+    <ClInclude Include="TCPServer.h">
+      <Filter>网络</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadPool.h">
+      <Filter>线程池</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -79,6 +88,12 @@
     </ClCompile>
     <ClCompile Include="UDPServer.cpp">
       <Filter>网络</Filter>
+    </ClCompile>
+    <ClCompile Include="TCPServer.cpp">
+      <Filter>网络</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadPool.cpp">
+      <Filter>线程池</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
