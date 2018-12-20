@@ -2,45 +2,36 @@
 #include "TraceLog.h"
 #include "common.hpp"
 #include "IOCPService.h"
+#include "ThreadPool.h"
 #include <sstream>
 #include <WinSock2.h>
 #include <process.h>
 
-unsigned int TraceLog::TraceLogThread(LPVOID lParam)
+UINT TraceLog::TraceLogThread(LPVOID lParam)
 {
 	TraceLog* pThis = (TraceLog*)lParam;
 	string log = "";
 	DWORD bytesWrited;
-	while (pThis->_runFlag)
 	{
+		EnterCriticalSection(&pThis->_cs);
+		if (pThis->_logList.size() > 0)
 		{
-			EnterCriticalSection(&pThis->_cs);
-			if (pThis->_logList.size() > 0)
-			{
-				log = pThis->_logList.front();
-				pThis->_logList.pop_front();
-			}
-			LeaveCriticalSection(&pThis->_cs);
+			log = pThis->_logList.front();
+			pThis->_logList.pop_front();
 		}
-		/*
-			这只有一个线程，不存在线程重入的问题，否则需要考虑 ov的重入。
-		*/
-		if (log != "")
-		{
-			DWORD bytesToWrite = log.length();
-			WriteFile(pThis->_fileHandle, log.c_str(), bytesToWrite, &bytesWrited, &pThis->_pLogContext->ov);
-			pThis->_pLogContext->ov.Offset += bytesToWrite;
-		}
-		log = "";
-		Sleep(1);
+		LeaveCriticalSection(&pThis->_cs);
 	}
+	/*
+		这只有一个线程，不存在线程重入的问题，否则需要考虑 ov的重入。
+	*/
+	if (log != "")
+	{
+		DWORD bytesToWrite = log.length();
+		WriteFile(pThis->_fileHandle, log.c_str(), bytesToWrite, &bytesWrited, &pThis->_pLogContext->ov);
+		pThis->_pLogContext->ov.Offset += bytesToWrite;
+	}
+	log = "";
 	return 0;
-}
-
-TraceLog TraceLog::Instance()
-{
-	static TraceLog log;
-	return log;
 }
 
 void TraceLog::IocpCallBack(LPVOID lParam)
@@ -67,9 +58,9 @@ bool TraceLog::InitIocpTask(IOCPService* io_service)
 	memset(_pLogContext, 0, sizeof(LogContext));
 	//初始化临界区
 	InitializeCriticalSection(&_cs);
-	//创建日志线程
 	_runFlag = true;
-	_beginthreadex(NULL, 0, TraceLogThread, this, 0, NULL);
+	//注册日志线程
+	ThreadPool::GetInstance()->AddThreadTask(TraceLogThread, this, MAX_TRHEAD_RUNTIMES, false);
 	//注册IOCP服务
 	bool rst = io_service->RegisterHandle(_fileHandle, this);
 	if (false == rst)

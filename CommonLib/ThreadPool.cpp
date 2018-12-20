@@ -1,6 +1,13 @@
 #include "stdafx.h"
 #include "ThreadPool.h"
 #include <process.h>
+#include <timeapi.h>
+
+ThreadPool * ThreadPool::GetInstance()
+{
+	static ThreadPool threadpool;
+	return &threadpool;
+}
 
 unsigned int __stdcall ThreadPool::ThreadCallBack(LPVOID lParam)
 {
@@ -8,7 +15,25 @@ unsigned int __stdcall ThreadPool::ThreadCallBack(LPVOID lParam)
 	std::map<UINT, ThreadTask>& tasks = pThreadPool->_mapTask;
 	while (pThreadPool->_runFlag)
 	{
-
+		DWORD tick = timeGetTime();
+		const ThreadTask task = pThreadPool->GetThreadTask();
+		if (NULL != task.cb && NULL != task.param)
+		{
+			//回调线程
+			task.cb(task.param);
+			//执行完成之后设置状态
+			DWORD endtick = timeGetTime();
+			EnterCriticalSection(&pThreadPool->_cs);
+			ThreadTask& t = tasks[task.tid];
+			t.runingnum > 0 ? --t.runingnum : 0;
+			t.lastruntime = endtick;
+			t.runtime = (endtick != tick) ? (endtick - tick) : 1;
+			LeaveCriticalSection(&pThreadPool->_cs);
+		}
+		else
+		{
+			Sleep(1);
+		}
 	}
 	return 0;
 }
@@ -47,20 +72,23 @@ bool ThreadPool::CloseThreadPool()
 	return true;
 }
 
-UINT ThreadPool::AddThreadTask(ThreadPoolCallBack cb, LPVOID baseaddr, UINT64 runtimes, bool mulFlag)
+UINT ThreadPool::AddThreadTask(ThreadPoolCallBack cb, LPVOID param, UINT64 runtimes, bool mulFlag)
 {
-	if (NULL == cb || NULL == baseaddr)
+	if (NULL == cb || NULL == param)
 	{
 		return (UINT)-1;
 	}
 	ThreadTask oneTask;
-	oneTask.baseaddr = baseaddr;
+	oneTask.param = param;
 	oneTask.cb = cb;
 	oneTask.runtimes = runtimes;
 	oneTask.mulFlag = mulFlag;
-	oneTask.runed = 0;
+	oneTask.runingnum = 0;
+	oneTask.runtime = 1;
+	oneTask.lastruntime = timeGetTime();
 	UINT tid = 0;
 	EnterCriticalSection(&_cs);
+	oneTask.tid = _tid;
 	_mapTask[_tid] = oneTask;
 	tid = _tid;
 	_tid++;
@@ -78,6 +106,42 @@ bool ThreadPool::RemoveThreadTask(UINT tid)
 	}
 	LeaveCriticalSection(&_cs);
 	return false;
+}
+
+const ThreadTask ThreadPool::GetThreadTask()
+{
+	ThreadTask task;
+	task.cb = NULL;
+	task.param = NULL;
+	double min = 1.0;
+	UINT tempTid = (UINT)-1;
+	DWORD tick = timeGetTime();
+	EnterCriticalSection(&_cs);
+	for (auto it = _mapTask.begin(); it != _mapTask.end(); ++it)
+	{
+		const ThreadTask& t = it->second;
+		if ((t.mulFlag == true || t.runingnum == 0) && t.runtimes > 0)
+		{
+			double timeLv = (tick - t.lastruntime) *1.0 / (tick - t.lastruntime + t.runtime);
+			if (timeLv < min)
+			{
+				min = timeLv;
+				tempTid = it->first;
+			}
+		}
+	}
+	if (tempTid != (UINT)-1)
+	{
+		ThreadTask&  t= _mapTask[tempTid];
+		++t.runingnum;
+		if (t.runtimes != MAX_TRHEAD_RUNTIMES && t.runtimes > 0)
+		{
+			--t.runtimes;
+		}
+		task = t;
+	}
+	LeaveCriticalSection(&_cs);
+	return task;
 }
 
 ThreadPool::ThreadPool()

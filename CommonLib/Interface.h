@@ -4,6 +4,7 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <Windows.h>
+#include <timeapi.h>
 
 constexpr UINT32 SOCKET_BUFFER_SIZE = 1024*1024;
 
