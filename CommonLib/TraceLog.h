@@ -23,6 +23,7 @@ public:
 	static UINT TraceLogThread(LPVOID);
 	virtual void IocpCallBack(LPVOID);
 	virtual bool InitIocpTask(IOCPService* io_service);
+	virtual bool RegNewIocpTask(IOCP_CONTEXT*);
 	bool TRACELOG(stringstream& is, TRACELOG_LEVEL lv = LOG_DEBUG);
 	const HANDLE GetHanlde() { return _fileHandle; }
 public:

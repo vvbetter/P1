@@ -28,7 +28,7 @@ public:
 	}
 	~SafeArray()
 	{
-		SAFE_DELETE_ARR(m_pData);
+		delete[](m_pData);
 		m_pData = NULL;
 	}
 	bool HasItem()const

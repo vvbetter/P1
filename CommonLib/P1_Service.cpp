@@ -26,6 +26,7 @@ bool P1_Service::P1_Start()
 	{
 		P1_LOG("ThreadPool Init faided")
 	}
+	P1_LOG("ThreadPool Init Success");
 	//初始化 IOCPService 
 	rst = _io.InitService();
 	if (false == rst)
@@ -33,6 +34,7 @@ bool P1_Service::P1_Start()
 		P1_LOG("IOCPSercie Init faided");
 		return rst;
 	}
+	P1_LOG("IOCPSercie Init Success");
 	//初始化日志任务
 	rst = _log.InitIocpTask(&_io);
 	if (false == rst)
@@ -40,7 +42,16 @@ bool P1_Service::P1_Start()
 		P1_LOG("TraceLog Init faided");
 		return rst;
 	}
-	return false;
+	P1_LOG("TraceLog Init Success");
+
+	rst = _netTasks.InitIocpTask(&_io);
+	if (false == rst)
+	{
+		P1_LOG("NetServiceTask Init Failed");
+		return false;
+	}
+	P1_LOG("NetServiceTask Init Success")
+	return true;
 }
 
 void P1_Service::P1_Log(std::stringstream& is, TRACELOG_LEVEL lv)

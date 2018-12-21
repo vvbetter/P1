@@ -1,6 +1,7 @@
 #pragma once
 #include "IOCPService.h"
 #include "TraceLog.h"
+#include "NetServiceTask.h"
 class P1_Service
 {
 public:
@@ -13,5 +14,6 @@ public:
 private:
 	IOCPService _io;
 	TraceLog _log;
+	NetServiceTask _netTasks;
 };
 

@@ -15,10 +15,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Config", "Config", "{72E767
 		Config\ServerConfig.json = Config\ServerConfig.json
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Clients", "Clients\Clients.vcxproj", "{237762B6-B762-4F02-8782-5FFF53D8B6B3}"
+EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
@@ -42,11 +41,22 @@ Global
 		{F172BC6C-851A-4DBA-B537-6879250DB1D1}.Release|x64.Build.0 = Release|x64
 		{F172BC6C-851A-4DBA-B537-6879250DB1D1}.Release|x86.ActiveCfg = Release|Win32
 		{F172BC6C-851A-4DBA-B537-6879250DB1D1}.Release|x86.Build.0 = Release|Win32
+		{237762B6-B762-4F02-8782-5FFF53D8B6B3}.Debug|x64.ActiveCfg = Debug|x64
+		{237762B6-B762-4F02-8782-5FFF53D8B6B3}.Debug|x64.Build.0 = Debug|x64
+		{237762B6-B762-4F02-8782-5FFF53D8B6B3}.Debug|x86.ActiveCfg = Debug|Win32
+		{237762B6-B762-4F02-8782-5FFF53D8B6B3}.Debug|x86.Build.0 = Debug|Win32
+		{237762B6-B762-4F02-8782-5FFF53D8B6B3}.Release|x64.ActiveCfg = Release|x64
+		{237762B6-B762-4F02-8782-5FFF53D8B6B3}.Release|x64.Build.0 = Release|x64
+		{237762B6-B762-4F02-8782-5FFF53D8B6B3}.Release|x86.ActiveCfg = Release|Win32
+		{237762B6-B762-4F02-8782-5FFF53D8B6B3}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A4948C7E-2D1C-451D-82F4-102B587FB4C0}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

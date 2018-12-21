@@ -94,8 +94,8 @@ inline HANDLE CreateSocket(SOCKETTYPE type, UINT ip, UINT16& port, bool ov = fal
 		int ret = bind(s, (SOCKADDR*)&addr, sizeof(SOCKADDR_IN));
 		if (ret == SOCKET_ERROR)
 		{
-			P1_LOG("Bind Socket Error:" << WSAGetLastError())
-				closesocket(s);
+			P1_LOG("Bind Socket Error:" << WSAGetLastError());
+			closesocket(s);
 			s = INVALID_SOCKET;
 		}
 	}

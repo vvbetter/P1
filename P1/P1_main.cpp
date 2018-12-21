@@ -10,12 +10,9 @@ int main()
 	p1.P1_Start();
 
 	int n = 100000;
-	while (n-- > 0)
+	while (1)
 	{
-		stringstream ss;
-		ss << "this is n:" << n << endl;
-		p1.P1_Log(ss);
+		Sleep(5000);
 	}
-	Sleep(5000);
 	return 0;
 }
