@@ -63,11 +63,16 @@ TCPServer::~TCPServer()
 
 bool TCPServer::RecvReq(NET_CONTEXT * clientContext)
 {
-	DWORD byteRecved;
-	int iResult = WSARecv((SOCKET)clientContext->s, &clientContext->wsaBuf, SOCKET_BUFFER_SIZE, &byteRecved, 0, &clientContext->ov, NULL);
-	if (iResult != WSA_IO_PENDING)
+	DWORD byteRecved = 0;
+	DWORD flag = 0;
+	int iResult = WSARecv((SOCKET)clientContext->s, &clientContext->wsaBuf, 1, &byteRecved, &flag, &clientContext->ov, NULL);
+	if (iResult == SOCKET_ERROR)
 	{
-		P1_LOG("TCPServer WSARecv Failed" << WSAGetLastError());
+		int errCode = WSAGetLastError();
+		if (errCode != WSA_IO_PENDING)
+		{
+			P1_LOG("TCPServer WSARecv Failed:" << WSAGetLastError());
+		}
 		return false;
 	}
 	return true;

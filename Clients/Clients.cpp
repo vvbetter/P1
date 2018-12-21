@@ -57,14 +57,13 @@ UINT __stdcall SendThread(LPVOID lParam)
 	Client* pClient = (Client*)lParam;
 	static UINT n = 0;
 	string str = "this is the data:";
-	stringstream ss;
 	while (1)
 	{
-		ss.clear();
+		stringstream ss;
 		ss << n;
 		str += ss.str();
 		send(pClient->s, str.c_str(), str.length(), 0);
-		Sleep(1000);
+		Sleep(10000);
 		n++;
 	}
 }

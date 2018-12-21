@@ -74,10 +74,12 @@ inline HANDLE CreateSocket(SOCKETTYPE type, UINT ip, UINT16& port, bool ov = fal
 		case TCP_SOCKET:
 		{
 			s = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+			break;
 		}
 		case UDP_SOCKET:
 		{
 			s = WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, NULL, 0, WSA_FLAG_OVERLAPPED);
+			break;
 		}
 		}
 	}

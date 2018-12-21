@@ -47,6 +47,7 @@ bool ThreadPool::InitThreadPool(UINT num)
 		num = 20;//TODO
 	}
 	_runFlag = true;
+	InitializeCriticalSection(&_cs);
 	for (UINT i = 0; i < num; ++i)
 	{
 		HANDLE h = (HANDLE)_beginthreadex(NULL, 0, ThreadCallBack, this, 0, NULL);
@@ -55,7 +56,6 @@ bool ThreadPool::InitThreadPool(UINT num)
 			_threadHandles.push_back(h);
 		}
 	}
-	InitializeCriticalSection(&_cs);
 	return true;
 }
 
@@ -69,6 +69,7 @@ bool ThreadPool::CloseThreadPool()
 		CloseHandle(h);
 	}
 	_threadHandles.clear();
+	DeleteCriticalSection(&_cs);
 	return true;
 }
 
