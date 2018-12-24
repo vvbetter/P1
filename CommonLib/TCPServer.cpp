@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "TCPServer.h"
 #include "common.hpp"
+#include "ThreadPool.h"
 #include <process.h>
 
 bool TCPServer::InitServer()
@@ -19,32 +20,43 @@ bool TCPServer::InitServer()
 		return false;
 	}
 	InitializeCriticalSection(&_cs);
-	_beginthreadex(NULL, 0, AcceptThread, this, 0, NULL);
+	ThreadPool::GetInstance()->AddThreadTask(AcceptThread, this, MAX_TRHEAD_RUNTIMES, false);
 	return true;
 }
 
 bool TCPServer::NetServerCallBack(NET_CONTEXT* pNetContext)
 {
-	P1_LOG(pNetContext->buf);
-	RecvReq(pNetContext);
+	switch (pNetContext->op)
+	{
+	case NET_OP_READ:
+		{
+			P1_LOG(pNetContext->buf);
+			RecvReq(pNetContext);
+		}
+		break;
+	case NET_OP_WRITE:
+		break;
+	default:
+		break;
+	}
+
 	return true;
 }
 
-unsigned int __stdcall TCPServer::AcceptThread(LPVOID lParam)
+unsigned int TCPServer::AcceptThread(LPVOID lParam)
 {
+	//只在线程池中注册了一个线程处理accept，没有考虑重入
 	TCPServer* s = (TCPServer*)lParam;
 	SOCKADDR_IN addr;
 	INT addrSize = sizeof(SOCKADDR_IN);
-	while (1)
+
+	SOCKET clientSocket = accept(s->_listenSocket, (sockaddr*)&addr, &addrSize);
+	if (clientSocket == INVALID_SOCKET)
 	{
-		SOCKET clientSocket = accept(s->_listenSocket, (sockaddr*)&addr, &addrSize);
-		if (clientSocket == INVALID_SOCKET)
-		{
-			P1_LOG("Accept Socket Error:" << WSAGetLastError());
-			continue;
-		}
-		s->AddNewClient(clientSocket);
+		P1_LOG("Accept Socket Error:" << WSAGetLastError());
+		return 0;
 	}
+	s->AddNewClient(clientSocket);
 	return 0;
 }
 
@@ -63,8 +75,10 @@ TCPServer::~TCPServer()
 
 bool TCPServer::RecvReq(NET_CONTEXT * clientContext)
 {
-	DWORD byteRecved = 0;
+	DWORD byteRecved;
 	DWORD flag = 0;
+
+	clientContext->op = NET_OP_READ;
 	int iResult = WSARecv((SOCKET)clientContext->s, &clientContext->wsaBuf, 1, &byteRecved, &flag, &clientContext->ov, NULL);
 	if (iResult == SOCKET_ERROR)
 	{
@@ -72,10 +86,30 @@ bool TCPServer::RecvReq(NET_CONTEXT * clientContext)
 		if (errCode != WSA_IO_PENDING)
 		{
 			P1_LOG("TCPServer WSARecv Failed:" << WSAGetLastError());
+			RemoveClient((SOCKET)clientContext->s);
+			return false;
 		}
-		return false;
 	}
 	return true;
+}
+
+bool TCPServer::SendReq(NET_CONTEXT * clientContext)
+{
+	DWORD byteSent = 0;
+	DWORD flag = 0;
+	clientContext->op = NET_OP_WRITE;
+	int iResult = WSASend((SOCKET)clientContext->s, &clientContext->wsaBuf, 1, &byteSent, flag, &clientContext->ov, NULL);
+	if (iResult == SOCKET_ERROR)
+	{
+		int errCode = WSAGetLastError();
+		if (errCode != WSA_IO_PENDING)
+		{
+			P1_LOG("TCPServer WSARecv Failed:" << WSAGetLastError());
+			RemoveClient((SOCKET)clientContext->s);
+			return false;
+		}
+	}
+	return false;
 }
 
 bool TCPServer::RemoveClient(SOCKET clientSocket)
@@ -86,18 +120,17 @@ bool TCPServer::RemoveClient(SOCKET clientSocket)
 	{
 		NET_CONTEXT* context = it->second;
 		delete context;
+		_clientsContext.erase(it);
 	}
 	auto itCmd = _clientCmd.find((HANDLE)clientSocket);
 	if (itCmd != _clientCmd.end())
 	{
 		SOCKET s = (SOCKET)itCmd->first;
-		SafeNetCmdArray* pCmd = itCmd->second;
-		while (pCmd->HasItem())
-		{
-			NetCmd* p = pCmd->GetItem();
-			SAFE_DELETE(p);
-		}
+		ClientCmd* pClient = itCmd->second;
+		ClearClientCmd(pClient);
+		SAFE_DELETE(pClient);
 		closesocket(s);
+		_clientCmd.erase(itCmd);
 	}
 	LeaveCriticalSection(&_cs);
 	return true;
@@ -110,19 +143,17 @@ bool TCPServer::RemoveAllClient()
 	{
 		NET_CONTEXT* p = it->second;
 		SAFE_DELETE(p);
-		it = _clientsContext.erase(it);
 	}
 	for (auto it = _clientCmd.begin(); it != _clientCmd.end(); ++it)
 	{
 		SOCKET s = (SOCKET)it->first;
-		SafeNetCmdArray* pCmd = it->second;
-		while (pCmd->HasItem())
-		{
-			NetCmd* p = pCmd->GetItem();
-			SAFE_DELETE(p);
-		}
+		ClientCmd* pClient = it->second;
+		ClearClientCmd(pClient);
+		SAFE_DELETE(pClient);
 		closesocket(s);
 	}
+	_clientsContext.clear();
+	_clientCmd.clear();
 	LeaveCriticalSection(&_cs);
 	return true;
 }
@@ -135,15 +166,50 @@ bool TCPServer::AddNewClient(SOCKET clientSocket)
 	clientContext->wsaBuf.len = SOCKET_BUFFER_SIZE;
 	clientContext->s = (HANDLE)clientSocket;
 	clientContext->pNetServer = this;
-	SafeNetCmdArray* cmdArray = new SafeNetCmdArray(256);
+
+	ClientCmd* pClientCmd = new ClientCmd();
+	pClientCmd->recvArray = new SafeNetCmdArray(256);
+	pClientCmd->sendArray = new SafeNetCmdArray(256);
+	InitializeCriticalSection(&pClientCmd->clientCs);
+
 
 	EnterCriticalSection(&_cs);
 	_clientsContext[(HANDLE)clientSocket] = clientContext;
-	_clientCmd[(HANDLE)clientSocket] = cmdArray;
+	_clientCmd[(HANDLE)clientSocket] = pClientCmd;
 	LeaveCriticalSection(&_cs);
 
-	_IoTaskInterface->RegNewIocpTask(clientContext);
+	bool iResult = _IoTaskInterface->RegNewIocpTask(clientContext);
+	if (iResult)
+	{
+		RecvReq(clientContext);
+	}
+	return true;
+}
+
+bool TCPServer::ClearClientCmd(ClientCmd* pClient)
+{
+	if (NULL == pClient) return false;
+
+	EnterCriticalSection(&pClient->clientCs);
+	SafeNetCmdArray* pCmd = NULL;
+	//删除接受队列
+	pCmd = pClient->recvArray;
+	while (pCmd->HasItem())
+	{
+		NetCmd* p = pCmd->GetItem();
+		SAFE_DELETE(p);
+	}
+	SAFE_DELETE(pCmd);
+	//删除发送队列
+	pCmd = pClient->sendArray;
+	while (pCmd->HasItem())
+	{
+		NetCmd* p = pCmd->GetItem();
+		SAFE_DELETE(p);
+	}
+	SAFE_DELETE(pCmd);
 	
-	RecvReq(clientContext);
+	LeaveCriticalSection(&pClient->clientCs);
+	DeleteCriticalSection(&pClient->clientCs);
 	return true;
 }

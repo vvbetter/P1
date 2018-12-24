@@ -25,12 +25,18 @@ SOCKET CreateSocket()
 	addr.sin_addr.S_un.S_addr = inet_addr(ip);
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
-	int iResult = connect(s, (sockaddr*)&addr, sizeof(addr));
-	if (iResult == SOCKET_ERROR)
+	while (1)
 	{
-		cout << "Connect failed" << WSAGetLastError() << endl;
-		closesocket(s);
-		return INVALID_SOCKET;
+		int iResult = connect(s, (sockaddr*)&addr, sizeof(addr));
+		if (iResult == SOCKET_ERROR)
+		{
+			cout << "Connect failed" << WSAGetLastError() << endl;
+			Sleep(1000);
+		}
+		else
+		{
+			break;
+		}
 	}
 	return s;
 }
@@ -38,17 +44,19 @@ SOCKET CreateSocket()
 class Client
 {
 public:
-	Client() { s = INVALID_SOCKET; };
+	Client() { s = INVALID_SOCKET; isRun = false; };
 	~Client() {};
 
 	bool ConnectToServer()
 	{
 		s = CreateSocket();
 		if (s == INVALID_SOCKET) return false;
+		isRun = true;
 		return true;
 	}
 public:
 	SOCKET s;
+	bool isRun;
 };
 
 
@@ -59,10 +67,15 @@ UINT __stdcall SendThread(LPVOID lParam)
 	string str = "this is the data:";
 	while (1)
 	{
+		if (!pClient->isRun)
+		{
+			Sleep(1);
+			continue;
+		}
 		stringstream ss;
 		ss << n;
-		str += ss.str();
-		send(pClient->s, str.c_str(), str.length(), 0);
+		string buf = str + ss.str();
+		send(pClient->s, buf.c_str(), buf.length(), 0);
 		Sleep(10000);
 		n++;
 	}
@@ -74,6 +87,11 @@ UINT __stdcall RecvThread(LPVOID lParam)
 	char buf[1024];
 	while (1)
 	{
+		if (!pClient->isRun)
+		{
+			Sleep(1);
+			continue;
+		}
 		memset(buf, 0, 1024);
 		recv(pClient->s, buf, 1024, 0);
 		cout << buf << endl;

@@ -13,8 +13,8 @@ class INetServer;
 
 enum NET_OPERATOR
 {
-	READ = 1,
-	WRITE,
+	NET_OP_READ = 1,
+	NET_OP_WRITE,
 };
 struct IOCP_CONTEXT
 {
