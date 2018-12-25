@@ -30,7 +30,7 @@ bool TCPServer::NetServerCallBack(NET_CONTEXT* pNetContext)
 	{
 	case NET_OP_READ:
 		{
-			P1_LOG(pNetContext->buf);
+			RecvNetCmdData((SOCKET)pNetContext->s, pNetContext->buf);
 			RecvReq(pNetContext);
 		}
 		break;
@@ -41,6 +41,34 @@ bool TCPServer::NetServerCallBack(NET_CONTEXT* pNetContext)
 	}
 
 	return true;
+}
+
+bool TCPServer::SendCmdData(SOCKET s, NetCmd * pCmd)
+{
+	bool iResult = false;
+	ClientCmd* pClientCmd = NULL;
+	EnterCriticalSection(&_cs);
+	auto it = _clientCmd.find((HANDLE)s);
+	if (it != _clientCmd.end())
+	{
+		pClientCmd = it->second;
+	}
+	LeaveCriticalSection(&_cs);
+
+	if (NULL != pClientCmd)
+	{
+		EnterCriticalSection(&pClientCmd->clientCs);
+		if (NULL != pClientCmd->sendArray)
+		{
+			if (pClientCmd->sendArray->HasSpace())
+			{
+				pClientCmd->sendArray->AddItem(pCmd);
+				iResult = true;
+			}
+		}
+		LeaveCriticalSection(&pClientCmd->clientCs);
+	}
+	return iResult;
 }
 
 unsigned int TCPServer::AcceptThread(LPVOID lParam)
@@ -79,7 +107,7 @@ bool TCPServer::RecvReq(NET_CONTEXT * clientContext)
 	DWORD flag = 0;
 
 	clientContext->op = NET_OP_READ;
-	int iResult = WSARecv((SOCKET)clientContext->s, &clientContext->wsaBuf, 1, &byteRecved, &flag, &clientContext->ov, NULL);
+	int iResult = WSARecv((SOCKET)clientContext->s, &clientContext->wsaRecvBuf, 1, &byteRecved, &flag, &clientContext->ov, NULL);
 	if (iResult == SOCKET_ERROR)
 	{
 		int errCode = WSAGetLastError();
@@ -98,7 +126,7 @@ bool TCPServer::SendReq(NET_CONTEXT * clientContext)
 	DWORD byteSent = 0;
 	DWORD flag = 0;
 	clientContext->op = NET_OP_WRITE;
-	int iResult = WSASend((SOCKET)clientContext->s, &clientContext->wsaBuf, 1, &byteSent, flag, &clientContext->ov, NULL);
+	int iResult = WSASend((SOCKET)clientContext->s, &clientContext->wsaSendBuf, 1, &byteSent, flag, &clientContext->ov, NULL);
 	if (iResult == SOCKET_ERROR)
 	{
 		int errCode = WSAGetLastError();
@@ -162,8 +190,8 @@ bool TCPServer::AddNewClient(SOCKET clientSocket)
 {
 	NET_CONTEXT* clientContext = new NET_CONTEXT();
 	memset(clientContext->buf, 0, SOCKET_BUFFER_SIZE);
-	clientContext->wsaBuf.buf = clientContext->buf;
-	clientContext->wsaBuf.len = SOCKET_BUFFER_SIZE;
+	clientContext->wsaRecvBuf.buf = clientContext->buf;
+	clientContext->wsaRecvBuf.len = SOCKET_BUFFER_SIZE;
 	clientContext->s = (HANDLE)clientSocket;
 	clientContext->pNetServer = this;
 
@@ -212,4 +240,15 @@ bool TCPServer::ClearClientCmd(ClientCmd* pClient)
 	LeaveCriticalSection(&pClient->clientCs);
 	DeleteCriticalSection(&pClient->clientCs);
 	return true;
+}
+
+bool TCPServer::RecvNetCmdData(SOCKET clientSocket, char * buf)
+{
+	TestNetCmd *pCmd = CreateNetCmd<TestNetCmd>(buf);
+	if (NULL != pCmd)
+	{
+		SendCmdData(clientSocket, pCmd);
+	}
+	P1_LOG(buf);
+	return false;
 }

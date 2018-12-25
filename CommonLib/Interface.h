@@ -10,6 +10,7 @@ constexpr UINT32 SOCKET_BUFFER_SIZE = 1024*1024;
 
 class IOCPService; 
 class INetServer;
+struct NetCmd;
 
 enum NET_OPERATOR
 {
@@ -22,7 +23,8 @@ struct IOCP_CONTEXT
 };
 struct NET_CONTEXT : public IOCP_CONTEXT
 {
-	WSABUF wsaBuf;
+	WSABUF wsaRecvBuf;
+	WSABUF wsaSendBuf;
 	char buf[SOCKET_BUFFER_SIZE];
 	HANDLE s;
 	INetServer* pNetServer;
@@ -43,13 +45,7 @@ class INetServer
 public:
 	virtual bool InitServer() = 0;
 	virtual bool NetServerCallBack(NET_CONTEXT*) = 0;
-};
-//ÍøÂçÃüÁîÊý¾ÝÍ·
-struct NetCmd
-{
-	BYTE mainCmd;
-	BYTE subCmd;
-	USHORT length;
+	virtual bool SendCmdData(SOCKET s, NetCmd* pCmd) = 0;
 };
 
 #endif // !_P1_INTERFACE

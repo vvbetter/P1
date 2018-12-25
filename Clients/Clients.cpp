@@ -9,6 +9,21 @@
 #include <sstream>
 #pragma comment(lib,"Ws2_32.lib")
 
+struct TestData
+{
+	USHORT length;
+	USHORT mainCmd;
+	USHORT subCmd;
+	int data;
+	TestData()
+	{
+		mainCmd = 1;
+		subCmd = 2;
+		length = sizeof(TestData);
+		data = 0;
+	}
+};
+
 using namespace std;
 const char* ip = "192.168.0.89";
 uint16_t port = 22222;
@@ -64,7 +79,7 @@ UINT __stdcall SendThread(LPVOID lParam)
 {
 	Client* pClient = (Client*)lParam;
 	static UINT n = 0;
-	string str = "this is the data:";
+	TestData data;
 	while (1)
 	{
 		if (!pClient->isRun)
@@ -72,10 +87,8 @@ UINT __stdcall SendThread(LPVOID lParam)
 			Sleep(1);
 			continue;
 		}
-		stringstream ss;
-		ss << n;
-		string buf = str + ss.str();
-		send(pClient->s, buf.c_str(), buf.length(), 0);
+		data.data = n;
+		send(pClient->s, (char*)&data, sizeof(TestData), 0);
 		Sleep(10000);
 		n++;
 	}
@@ -94,7 +107,11 @@ UINT __stdcall RecvThread(LPVOID lParam)
 		}
 		memset(buf, 0, 1024);
 		recv(pClient->s, buf, 1024, 0);
-		cout << buf << endl;
+		TestData* pData = (TestData*)buf;
+		cout << "length: " << pData->length
+			<< " mainCmd: " << pData->mainCmd
+			<< " subCmd: " << pData->subCmd
+			<< " data: " << pData->data << endl;
 	}
 }
 

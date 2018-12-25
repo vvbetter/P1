@@ -153,6 +153,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Cmd.h" />
     <ClInclude Include="common.hpp" />
     <ClInclude Include="ConfigManager.h" />
     <ClInclude Include="Interface.h" />
