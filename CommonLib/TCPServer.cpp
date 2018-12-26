@@ -4,6 +4,9 @@
 #include "ThreadPool.h"
 #include <process.h>
 
+
+constexpr UINT FRAME_NUMBER_SEND_DATA = 10; //每个玩家每帧发送命令数量
+
 bool TCPServer::InitServer()
 {
 	UINT16 port = 22222;
@@ -20,7 +23,8 @@ bool TCPServer::InitServer()
 		return false;
 	}
 	InitializeCriticalSection(&_cs);
-	ThreadPool::GetInstance()->AddThreadTask(AcceptThread, this, MAX_TRHEAD_RUNTIMES, false);
+	ThreadPool::GetInstance()->AddThreadTask(AcceptThread, this, MAX_TRHEAD_RUNTIMES, 1);
+	ThreadPool::GetInstance()->AddThreadTask(SendThread, this, MAX_TRHEAD_RUNTIMES, 4);
 	return true;
 }
 
@@ -45,6 +49,11 @@ bool TCPServer::NetServerCallBack(NET_CONTEXT* pNetContext)
 
 bool TCPServer::SendCmdData(SOCKET s, NetCmd * pCmd)
 {
+	_ASSERT(pCmd->length < SOCKET_BUFFER_SIZE);
+	if (pCmd->length >= SOCKET_BUFFER_SIZE)
+	{
+		return false;
+	}
 	bool iResult = false;
 	ClientCmd* pClientCmd = NULL;
 	EnterCriticalSection(&_cs);
@@ -52,22 +61,19 @@ bool TCPServer::SendCmdData(SOCKET s, NetCmd * pCmd)
 	if (it != _clientCmd.end())
 	{
 		pClientCmd = it->second;
-	}
-	LeaveCriticalSection(&_cs);
-
-	if (NULL != pClientCmd)
-	{
-		EnterCriticalSection(&pClientCmd->clientCs);
-		if (NULL != pClientCmd->sendArray)
+		if (NULL != pClientCmd)
 		{
-			if (pClientCmd->sendArray->HasSpace())
+			if (NULL != pClientCmd->sendArray)
 			{
-				pClientCmd->sendArray->AddItem(pCmd);
-				iResult = true;
+				if (pClientCmd->sendArray->HasSpace())
+				{
+					pClientCmd->sendArray->AddItem(pCmd);
+					iResult = true;
+				}
 			}
 		}
-		LeaveCriticalSection(&pClientCmd->clientCs);
 	}
+	LeaveCriticalSection(&_cs);
 	return iResult;
 }
 
@@ -88,6 +94,65 @@ unsigned int TCPServer::AcceptThread(LPVOID lParam)
 	return 0;
 }
 
+unsigned int TCPServer::SendThread(LPVOID lParam)
+{
+	TCPServer* s = (TCPServer*)lParam;
+	std::map<SOCKET, std::vector< NetCmd*> >tempCmds;
+	auto& clientCmds = s->_clientCmd;
+	EnterCriticalSection(&s->_cs);
+	for (auto it = clientCmds.begin(); it != clientCmds.end(); ++it)
+	{
+		UINT cmdCount = 0;
+		std::vector<NetCmd*> vecCmds(FRAME_NUMBER_SEND_DATA, NULL);
+		SOCKET clientSocket = (SOCKET)it->first;
+		ClientCmd* pClientCmds = it->second;
+		while (pClientCmds->sendArray->HasItem() && cmdCount < FRAME_NUMBER_SEND_DATA)
+		{
+			NetCmd* pCmd = pClientCmds->sendArray->GetItem();
+			vecCmds[cmdCount] = pCmd;
+			++cmdCount;
+		}
+		tempCmds[clientSocket] = vecCmds;
+	}
+	LeaveCriticalSection(&s->_cs);
+
+
+	//定义发送缓冲区
+	char sendBuff[SOCKET_BUFFER_SIZE] = { 0 };
+	for (auto it = tempCmds.begin(); it != tempCmds.end(); ++it)
+	{
+		SOCKET clientSocket = it->first;
+		auto& vecCmds = it->second;
+		//组包
+		UINT offset = 0;
+		for (int i = 0; i < FRAME_NUMBER_SEND_DATA; )
+		{
+			NetCmd* pCmd = vecCmds[i];
+			if (NULL != pCmd)
+			{
+				if (offset + pCmd->length < SOCKET_BUFFER_SIZE)
+				{
+					memcpy_s(sendBuff + offset, pCmd->length, pCmd, pCmd->length);
+					offset += pCmd->length;
+					SAFE_DELETE(pCmd);
+				}
+				else
+				{
+					s->SendReq(clientSocket, sendBuff, offset);
+					offset = 0;
+					continue;
+				}
+			}
+			++i;
+		}
+		if (offset != 0)
+		{
+			s->SendReq(clientSocket, sendBuff, offset);
+		}
+	}
+	return 0;
+}
+
 TCPServer::TCPServer(IIOCPTaskInterface* iotask)
 {
 	_ASSERT(iotask != NULL);
@@ -105,7 +170,7 @@ bool TCPServer::RecvReq(NET_CONTEXT * clientContext)
 {
 	DWORD byteRecved;
 	DWORD flag = 0;
-
+	memset(clientContext->buf, 0, SOCKET_BUFFER_SIZE);
 	clientContext->op = NET_OP_READ;
 	int iResult = WSARecv((SOCKET)clientContext->s, &clientContext->wsaRecvBuf, 1, &byteRecved, &flag, &clientContext->ov, NULL);
 	if (iResult == SOCKET_ERROR)
@@ -121,19 +186,35 @@ bool TCPServer::RecvReq(NET_CONTEXT * clientContext)
 	return true;
 }
 
-bool TCPServer::SendReq(NET_CONTEXT * clientContext)
+bool TCPServer::SendReq(SOCKET s, char* buff, UINT length)
 {
+	bool ret = false;
+	int iResult = SOCKET_ERROR;
 	DWORD byteSent = 0;
 	DWORD flag = 0;
-	clientContext->op = NET_OP_WRITE;
-	int iResult = WSASend((SOCKET)clientContext->s, &clientContext->wsaSendBuf, 1, &byteSent, flag, &clientContext->ov, NULL);
+	EnterCriticalSection(&_cs);
+	auto it = _clientsContext.find((HANDLE)s);
+	if (it != _clientsContext.end())
+	{
+		NET_CONTEXT* pContext = it->second;
+		pContext->wsaSendBuf.buf = buff;
+		pContext->wsaSendBuf.len = length;
+		iResult = WSASend(s, &pContext->wsaSendBuf, 1, &byteSent, flag, &pContext->ov, NULL);
+		ret = true;
+	}
+	LeaveCriticalSection(&_cs);
+
+	if (ret == false)
+	{
+		return false;
+	}
 	if (iResult == SOCKET_ERROR)
 	{
 		int errCode = WSAGetLastError();
 		if (errCode != WSA_IO_PENDING)
 		{
 			P1_LOG("TCPServer WSARecv Failed:" << WSAGetLastError());
-			RemoveClient((SOCKET)clientContext->s);
+			RemoveClient(s);
 			return false;
 		}
 	}
@@ -198,8 +279,6 @@ bool TCPServer::AddNewClient(SOCKET clientSocket)
 	ClientCmd* pClientCmd = new ClientCmd();
 	pClientCmd->recvArray = new SafeNetCmdArray(256);
 	pClientCmd->sendArray = new SafeNetCmdArray(256);
-	InitializeCriticalSection(&pClientCmd->clientCs);
-
 
 	EnterCriticalSection(&_cs);
 	_clientsContext[(HANDLE)clientSocket] = clientContext;
@@ -218,7 +297,6 @@ bool TCPServer::ClearClientCmd(ClientCmd* pClient)
 {
 	if (NULL == pClient) return false;
 
-	EnterCriticalSection(&pClient->clientCs);
 	SafeNetCmdArray* pCmd = NULL;
 	//删除接受队列
 	pCmd = pClient->recvArray;
@@ -236,18 +314,36 @@ bool TCPServer::ClearClientCmd(ClientCmd* pClient)
 		SAFE_DELETE(p);
 	}
 	SAFE_DELETE(pCmd);
-	
-	LeaveCriticalSection(&pClient->clientCs);
-	DeleteCriticalSection(&pClient->clientCs);
 	return true;
 }
 
 bool TCPServer::RecvNetCmdData(SOCKET clientSocket, char * buf)
 {
-	TestNetCmd *pCmd = CreateNetCmd<TestNetCmd>(buf);
-	if (NULL != pCmd)
+	UINT offset = 0;
+	while (offset < SOCKET_BUFFER_SIZE)
 	{
-		SendCmdData(clientSocket, pCmd);
+		NetCmd* pCmd = (NetCmd*)(buf + offset);
+		USHORT len = pCmd->length;
+		if (0 == len)
+		{
+			break;
+		}
+		offset += len;
+		USHORT mainCmd = pCmd->mainCmd;
+		USHORT subCmd = pCmd->subCmd;
+		switch (mainCmd)
+		{
+		case CMD_TEST:
+		{
+			TestNetCmd *pCmd = CreateNetCmd<TestNetCmd>(buf);
+			if (NULL != pCmd)
+			{
+				SendCmdData(clientSocket, pCmd);
+			}
+		}
+		default:
+			break;
+		}
 	}
 	P1_LOG(buf);
 	return false;

@@ -60,7 +60,7 @@ bool TraceLog::InitIocpTask(IOCPService* io_service)
 	InitializeCriticalSection(&_cs);
 	_runFlag = true;
 	//注册日志线程
-	ThreadPool::GetInstance()->AddThreadTask(TraceLogThread, this, MAX_TRHEAD_RUNTIMES, false);
+	ThreadPool::GetInstance()->AddThreadTask(TraceLogThread, this, MAX_TRHEAD_RUNTIMES, 1);
 	//注册IOCP服务
 	bool rst = io_service->RegisterHandle(_fileHandle, this);
 	if (false == rst)

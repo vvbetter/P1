@@ -44,7 +44,7 @@ bool ThreadPool::InitThreadPool(UINT num)
 {
 	if (0 == num)
 	{
-		num = 20;//TODO
+		num = 20;//TODO 设置线程池线程数量
 	}
 	_runFlag = true;
 	InitializeCriticalSection(&_cs);
@@ -73,7 +73,7 @@ bool ThreadPool::CloseThreadPool()
 	return true;
 }
 
-UINT ThreadPool::AddThreadTask(ThreadPoolCallBack cb, LPVOID param, UINT64 runtimes, bool mulFlag)
+UINT ThreadPool::AddThreadTask(ThreadPoolCallBack cb, LPVOID param, UINT64 runtimes, UINT mulNum)
 {
 	if (NULL == cb || NULL == param)
 	{
@@ -83,7 +83,7 @@ UINT ThreadPool::AddThreadTask(ThreadPoolCallBack cb, LPVOID param, UINT64 runti
 	oneTask.param = param;
 	oneTask.cb = cb;
 	oneTask.runtimes = runtimes;
-	oneTask.mulFlag = mulFlag;
+	oneTask.mulNum = mulNum;
 	oneTask.runingnum = 0;
 	oneTask.runtime = 1;
 	oneTask.lastruntime = timeGetTime();
@@ -121,7 +121,7 @@ const ThreadTask ThreadPool::GetThreadTask()
 	for (auto it = _mapTask.begin(); it != _mapTask.end(); ++it)
 	{
 		const ThreadTask& t = it->second;
-		if ((t.mulFlag == true || t.runingnum == 0) && t.runtimes > 0)
+		if ((t.runingnum < t.mulNum) && t.runtimes > 0)
 		{
 			double timeLv = (tick - t.lastruntime) *1.0 / (tick - t.lastruntime + t.runtime);
 			if (timeLv < min)

@@ -4,9 +4,9 @@
 //网络命令数据头
 struct NetCmd
 {
-	USHORT length;
-	USHORT mainCmd;
-	USHORT subCmd;
+	USHORT length;  //数据结构长度
+	USHORT mainCmd; //主命令码
+	USHORT subCmd;  //子命令码
 };
 
 ///////  T 需要是继承至 NetCmd 的结构体
@@ -34,6 +34,12 @@ inline T* CreateNetCmd(LPVOID src)
 	return pCmd;
 }
 
+enum MainCmds
+{
+	CMD_TEST = 0,
+};
+
+// mainCmd:1,subCmd:1
 struct TestNetCmd :public NetCmd
 {
 	int data;

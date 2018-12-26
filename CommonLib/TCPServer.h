@@ -11,24 +11,25 @@ struct ClientCmd
 {
 	SafeNetCmdArray* recvArray; //接收命令队列
 	SafeNetCmdArray* sendArray; //发送命令队列
-	CRITICAL_SECTION clientCs;  //每个玩家的命令锁
 };
 
 class TCPServer : public INetServer
 {
 public:
+	//interface
 	virtual bool InitServer();
 	virtual bool NetServerCallBack(NET_CONTEXT*);
 	virtual bool SendCmdData(SOCKET s, NetCmd* pCmd);
-
+	//工作线程
 	static unsigned int  AcceptThread(LPVOID);
+	static unsigned int SendThread(LPVOID);
 public:
 	TCPServer(IIOCPTaskInterface* iotask);
 	virtual ~TCPServer();
 
 public:
 	bool RecvReq(NET_CONTEXT* clientContext);
-	bool SendReq(NET_CONTEXT* clientContext);
+	bool SendReq(SOCKET s, char* buff, UINT length);
 	bool RemoveClient(SOCKET clientSocket);
 private:
 	bool RemoveAllClient();

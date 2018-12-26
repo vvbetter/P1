@@ -17,8 +17,8 @@ struct TestData
 	int data;
 	TestData()
 	{
-		mainCmd = 1;
-		subCmd = 2;
+		mainCmd = 0;
+		subCmd = 1;
 		length = sizeof(TestData);
 		data = 0;
 	}

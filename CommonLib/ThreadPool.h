@@ -3,7 +3,9 @@
 #include <map>
 #include <vector>
 
-constexpr UINT64 MAX_TRHEAD_RUNTIMES = (UINT64)-1;
+constexpr UINT64 MAX_TRHEAD_RUNTIMES = (UINT64)-1; //线程最大运行次数。设置此值线程将不会扣减运行次数
+constexpr UINT MAX_THREAD_RUNNING = (UINT)-1; //任务并行运行最大线程数量。
+
 typedef UINT(*ThreadPoolCallBack)(LPVOID);
 
 struct ThreadTask
@@ -18,8 +20,8 @@ struct ThreadTask
 	LPVOID param;		
 	ThreadPoolCallBack cb;	//回调
 	UINT64 runtimes;		//运行次数
-	bool mulFlag;			//多线程并发标志
-	UINT runingnum;			//并发数量
+	UINT mulNum;			//最大并发数量
+	UINT runingnum;			//当前并发数量
 	UINT runtime;			//运行时间
 	DWORD lastruntime;		//上次运行完成时间戳
 };
@@ -31,7 +33,7 @@ public:
 	static unsigned int __stdcall ThreadCallBack(LPVOID);
 	bool InitThreadPool(UINT num = 0);
 	bool CloseThreadPool();
-	UINT AddThreadTask(ThreadPoolCallBack cb, LPVOID param, UINT64 runtimes, bool mulFlag /*是否多线程并发标志*/ = false);
+	UINT AddThreadTask(ThreadPoolCallBack cb, LPVOID param, UINT64 runtimes, UINT mulNum /*同时运行任务的线程数量*/ = MAX_THREAD_RUNNING);
 	bool RemoveThreadTask(UINT tid);
 private:
 	const ThreadTask GetThreadTask();
