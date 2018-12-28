@@ -2,6 +2,7 @@
 #include "P1_Service.h"
 #include "common.hpp"
 #include "ThreadPool.h"
+#include "TimerManager.h"
 #include <timeapi.h>
 #pragma comment(lib,"Ws2_32.lib")
 #pragma comment(lib,"Winmm.lib")
@@ -24,9 +25,19 @@ bool P1_Service::P1_Start()
 	rst = ThreadPool::GetInstance()->InitThreadPool();
 	if (false == rst)
 	{
-		P1_LOG("ThreadPool Init faided")
+		P1_LOG("ThreadPool Init faided");
+		return rst;
+		
 	}
 	P1_LOG("ThreadPool Init Success");
+	//初始化定时器
+	rst = TimerManager::GetInstance()->InitTimerManager();
+	if (false == rst)
+	{
+		P1_LOG("TimerManager Init Failed");
+		return rst;
+	}
+	P1_LOG("TimerManager Init Success");
 	//初始化 IOCPService 
 	rst = _io.InitService();
 	if (false == rst)

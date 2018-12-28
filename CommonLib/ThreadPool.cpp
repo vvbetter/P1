@@ -30,10 +30,7 @@ unsigned int __stdcall ThreadPool::ThreadCallBack(LPVOID lParam)
 			t.runtime = (endtick != tick) ? (endtick - tick) : 1;
 			LeaveCriticalSection(&pThreadPool->_cs);
 		}
-		else
-		{
-			Sleep(1);
-		}
+		Sleep(1);
 	}
 	return 0;
 }
@@ -121,7 +118,7 @@ const ThreadTask ThreadPool::GetThreadTask()
 	for (auto it = _mapTask.begin(); it != _mapTask.end(); ++it)
 	{
 		const ThreadTask& t = it->second;
-		if ((t.runingnum < t.mulNum) && t.runtimes > 0)
+		if ((t.runingnum <= t.mulNum) && t.runtimes > 0)
 		{
 			double timeLv = (tick - t.lastruntime) *1.0 / (tick - t.lastruntime + t.runtime);
 			if (timeLv < min)

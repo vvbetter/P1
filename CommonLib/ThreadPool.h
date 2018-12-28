@@ -33,7 +33,7 @@ public:
 	static unsigned int __stdcall ThreadCallBack(LPVOID);
 	bool InitThreadPool(UINT num = 0);
 	bool CloseThreadPool();
-	UINT AddThreadTask(ThreadPoolCallBack cb, LPVOID param, UINT64 runtimes, UINT mulNum /*同时运行任务的线程数量*/ = MAX_THREAD_RUNNING);
+	UINT AddThreadTask(ThreadPoolCallBack cb, LPVOID param, UINT64 runtimes = MAX_TRHEAD_RUNTIMES, UINT mulNum /*同时运行任务的线程数量*/ = MAX_THREAD_RUNNING);
 	bool RemoveThreadTask(UINT tid);
 private:
 	const ThreadTask GetThreadTask();

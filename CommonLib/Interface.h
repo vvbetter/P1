@@ -17,6 +17,15 @@ enum NET_OPERATOR
 	NET_OP_READ = 1,
 	NET_OP_WRITE,
 };
+
+enum TIMER_STATE
+{
+	TIMER_WAIT,     //等待运行
+	TIMER_RUN,      //立即运行
+	TIMER_REMOVE,   //移除
+	TIMER_SUSPEND   //挂起暂停
+};
+
 struct IOCP_CONTEXT
 {
 	OVERLAPPED ov;
@@ -38,8 +47,6 @@ public:
 	virtual bool RegNewIocpTask(IOCP_CONTEXT*) = 0;
 };
 
-typedef void(IIOCPTaskInterface::*CallBackFunction)(LPVOID);
-
 class INetServer
 {
 public:
@@ -48,5 +55,16 @@ public:
 	virtual bool SendCmdData(SOCKET s, NetCmd* pCmd) = 0;
 };
 
+//TIMER
+typedef void(*TimerCallBack)(LPVOID);
+class ITimer
+{
+public:
+	virtual bool InitTimer(IN UINT timerId, IN LPVOID lParam, IN TimerCallBack cb, IN UINT interval, IN UINT64 runcount) = 0;
+	virtual UINT GetTimerId() = 0;
+	virtual bool ChangeTimerState(IN TIMER_STATE state) = 0;
+	virtual TIMER_STATE QueryExcuteTimer() = 0;
+	virtual bool ExcuteTimer() = 0;
+};
 #endif // !_P1_INTERFACE
 

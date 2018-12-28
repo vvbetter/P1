@@ -28,6 +28,9 @@
     <Filter Include="命令">
       <UniqueIdentifier>{52ecc4e1-2f96-455c-b93b-b2094d608a07}</UniqueIdentifier>
     </Filter>
+    <Filter Include="定时器">
+      <UniqueIdentifier>{6d918003-ff01-43ad-b39f-9052a0c04e9d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -72,6 +75,9 @@
     <ClInclude Include="Cmd.h">
       <Filter>命令</Filter>
     </ClInclude>
+    <ClInclude Include="TimerManager.h">
+      <Filter>定时器</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -100,6 +106,9 @@
     </ClCompile>
     <ClCompile Include="ThreadPool.cpp">
       <Filter>线程池</Filter>
+    </ClCompile>
+    <ClCompile Include="TimerManager.cpp">
+      <Filter>定时器</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

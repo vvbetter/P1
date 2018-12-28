@@ -76,6 +76,7 @@ bool TraceLog::RegNewIocpTask(IOCP_CONTEXT *)
 	return true;
 }
 
+
 bool TraceLog::TRACELOG(stringstream& is, TRACELOG_LEVEL lv)
 {
 	EnterCriticalSection(&_cs);

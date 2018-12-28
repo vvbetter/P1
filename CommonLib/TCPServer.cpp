@@ -118,7 +118,7 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 
 
 	//定义发送缓冲区
-	char sendBuff[SOCKET_BUFFER_SIZE] = { 0 };
+	char* sendBuff = new char[SOCKET_BUFFER_SIZE];
 	for (auto it = tempCmds.begin(); it != tempCmds.end(); ++it)
 	{
 		SOCKET clientSocket = it->first;
@@ -150,6 +150,8 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 			s->SendReq(clientSocket, sendBuff, offset);
 		}
 	}
+	delete[] sendBuff;
+	Sleep(1);
 	return 0;
 }
 
@@ -200,6 +202,7 @@ bool TCPServer::SendReq(SOCKET s, char* buff, UINT length)
 		pContext->wsaSendBuf.buf = buff;
 		pContext->wsaSendBuf.len = length;
 		iResult = WSASend(s, &pContext->wsaSendBuf, 1, &byteSent, flag, &pContext->ov, NULL);
+		P1_LOG("send Data");
 		ret = true;
 	}
 	LeaveCriticalSection(&_cs);

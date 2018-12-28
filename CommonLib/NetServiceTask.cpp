@@ -6,6 +6,10 @@
 void NetServiceTask::IocpCallBack(LPVOID pov)
 {
 	NET_CONTEXT* net_context = CONTAINING_RECORD(pov, NET_CONTEXT, ov);
+	if (NULL == net_context || NULL == net_context->pNetServer)
+	{
+		return;
+	}
 	net_context->pNetServer->NetServerCallBack(net_context);
 }
 

@@ -4,6 +4,8 @@
 #include <process.h>
 using namespace std;
 
+constexpr UINT IOCP_TIME_OUT = 5000;//Milliseconds
+
 IOCPService::IOCPService()
 {
 	_IocpHandle = NULL;
@@ -30,8 +32,19 @@ unsigned  __stdcall IOCPService::CompletionPortThread(LPVOID lParam)
 			&dwNoOfBytes,  // Bytes transferred  
 			&ulKey,
 			&pov,          // OVERLAPPED structure  
-			INFINITE       // Notification time-out interval  
+			IOCP_TIME_OUT       // Notification time-out interval  
 		);
+		if (!fSuccess)
+		{
+			DWORD eCode = GetLastError();
+			switch (eCode)
+			{
+			case WAIT_TIMEOUT:
+			default:
+				continue;
+			}
+		}
+
 		if (NULL == pov)
 		{
 			continue;
@@ -40,8 +53,7 @@ unsigned  __stdcall IOCPService::CompletionPortThread(LPVOID lParam)
 		// containing the OVERLAPPED structure received.  
 		IIOCPTaskInterface* pBase = (IIOCPTaskInterface*)ulKey;
 		if (NULL == pBase) continue;
-		CallBackFunction callback = &IIOCPTaskInterface::IocpCallBack;
-		(pBase->*callback)(pov);
+		(pBase->IocpCallBack)(pov);
 	}
 	return 0;
 }

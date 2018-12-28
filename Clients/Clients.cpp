@@ -88,10 +88,15 @@ UINT __stdcall SendThread(LPVOID lParam)
 			continue;
 		}
 		data.data = n;
-		send(pClient->s, (char*)&data, sizeof(TestData), 0);
+		int ret = send(pClient->s, (char*)&data, sizeof(TestData), 0);
+		if (ret == SOCKET_ERROR)
+		{
+			return 0;
+		}
 		Sleep(10000);
 		n++;
 	}
+	return 0;
 }
 
 UINT __stdcall RecvThread(LPVOID lParam)
@@ -106,13 +111,19 @@ UINT __stdcall RecvThread(LPVOID lParam)
 			continue;
 		}
 		memset(buf, 0, 1024);
-		recv(pClient->s, buf, 1024, 0);
+		int ret = recv(pClient->s, buf, 1024, 0);
+		if (ret == SOCKET_ERROR)
+		{
+			return 0;
+		}
 		TestData* pData = (TestData*)buf;
-		cout << "length: " << pData->length
+		cout << "recv size: " << ret
+			<< "length: " << pData->length
 			<< " mainCmd: " << pData->mainCmd
 			<< " subCmd: " << pData->subCmd
 			<< " data: " << pData->data << endl;
 	}
+	return 0;
 }
 
 int main()
