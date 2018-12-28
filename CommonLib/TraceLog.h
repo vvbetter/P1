@@ -20,6 +20,7 @@ struct LogContext :public IOCP_CONTEXT
 class TraceLog : public IIOCPTaskInterface
 {
 public:
+	static TraceLog* GetInstance();
 	static UINT TraceLogThread(LPVOID);
 	virtual void IocpCallBack(LPVOID);
 	virtual bool InitIocpTask(IOCPService* io_service);
@@ -27,7 +28,7 @@ public:
 
 	bool TRACELOG(stringstream& is, TRACELOG_LEVEL lv = LOG_DEBUG);
 	const HANDLE GetHanlde() { return _fileHandle; }
-public:
+private:
 	TraceLog();
 	virtual ~TraceLog();
 private:

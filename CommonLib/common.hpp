@@ -4,6 +4,7 @@
 
 
 #include "Interface.h"
+#include "TraceLog.h"
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -11,8 +12,12 @@
 #define SAFE_DELETE(x) if(x){delete (x); (x) = NULL;}
 #define SAFE_DELETE_ARR(x) if(x){ delete[] (x); (x) = NULL; }
 
-#define P1_LOG(x) \
-		{std::cout<<x <<std::endl;}
+#define P1_LOG(x)			\
+{							\
+	std::stringstream ss;	\
+	ss << x << std::endl;	\
+	TraceLog::GetInstance()->TRACELOG(ss);\
+}
 
 inline wchar_t *multiByteToWideChar(const std::string& pKey)
 {

@@ -19,53 +19,50 @@ P1_Service::~P1_Service()
 
 bool P1_Service::P1_Start()
 {
+	std::cout << "------ 服务器初始化......-------" << endl;
 	timeBeginPeriod(1);
 	bool rst = false;
 	//初始化线程池
 	rst = ThreadPool::GetInstance()->InitThreadPool();
 	if (false == rst)
 	{
-		P1_LOG("ThreadPool Init faided");
+		std::cout << ("ThreadPool Init faided") << endl;
 		return rst;
 		
 	}
-	P1_LOG("ThreadPool Init Success");
+	std::cout << ("ThreadPool Init Success") << endl;
 	//初始化定时器
 	rst = TimerManager::GetInstance()->InitTimerManager();
 	if (false == rst)
 	{
-		P1_LOG("TimerManager Init Failed");
+		std::cout << ("TimerManager Init Failed") << endl;
 		return rst;
 	}
-	P1_LOG("TimerManager Init Success");
+	std::cout << ("TimerManager Init Success") << endl;
 	//初始化 IOCPService 
 	rst = _io.InitService();
 	if (false == rst)
 	{
-		P1_LOG("IOCPSercie Init faided");
+		std::cout << ("IOCPSercie Init faided") << endl;
 		return rst;
 	}
-	P1_LOG("IOCPSercie Init Success");
+	std::cout << ("IOCPSercie Init Success") << endl;
 	//初始化日志任务
-	rst = _log.InitIocpTask(&_io);
+	rst = TraceLog::GetInstance()->InitIocpTask(&_io);
 	if (false == rst)
 	{
-		P1_LOG("TraceLog Init faided");
+		std::cout << ("TraceLog Init faided") << endl;
 		return rst;
 	}
-	P1_LOG("TraceLog Init Success");
+	std::cout << ("TraceLog Init Success") << endl;
 
 	rst = _netTasks.InitIocpTask(&_io);
 	if (false == rst)
 	{
-		P1_LOG("NetServiceTask Init Failed");
+		std::cout << ("NetServiceTask Init Failed") << endl;
 		return false;
 	}
-	P1_LOG("NetServiceTask Init Success")
+	std::cout << ("NetServiceTask Init Success") << endl;
+	std::cout << "------ 服务器初始化 成功!!! -------" << endl;
 	return true;
-}
-
-void P1_Service::P1_Log(std::stringstream& is, TRACELOG_LEVEL lv)
-{
-	_log.TRACELOG(is, lv);
 }

@@ -76,10 +76,6 @@ UINT TimerManager::TimerThread(LPVOID lParam)
 {
 	TimerManager* pManager = (TimerManager*)lParam;
 	DWORD tick = timeGetTime();
-	if (tick - pManager->_lastQueryTime < MIN_TIMER_INTERVAL)
-	{
-		return 0;
-	}
 	pManager->ExcuteTimerTask();
 	pManager->_lastQueryTime = tick;
 	return 0;

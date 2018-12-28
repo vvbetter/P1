@@ -2,6 +2,7 @@
 #include "TCPServer.h"
 #include "common.hpp"
 #include "ThreadPool.h"
+#include "TimerManager.h"
 #include <process.h>
 
 
@@ -25,6 +26,7 @@ bool TCPServer::InitServer()
 	InitializeCriticalSection(&_cs);
 	ThreadPool::GetInstance()->AddThreadTask(AcceptThread, this, MAX_TRHEAD_RUNTIMES, 1);
 	ThreadPool::GetInstance()->AddThreadTask(SendThread, this, MAX_TRHEAD_RUNTIMES, 4);
+	TimerManager::GetInstance()->CreateTimer(HeartCheckTimer, this, 5000);
 	return true;
 }
 
@@ -116,7 +118,10 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 	}
 	LeaveCriticalSection(&s->_cs);
 
-
+	if (tempCmds.size() == 0)
+	{
+		return 0;
+	}
 	//定义发送缓冲区
 	char* sendBuff = new char[SOCKET_BUFFER_SIZE];
 	for (auto it = tempCmds.begin(); it != tempCmds.end(); ++it)
@@ -153,6 +158,12 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 	delete[] sendBuff;
 	Sleep(1);
 	return 0;
+}
+
+void TCPServer::HeartCheckTimer(LPVOID)
+{
+	DWORD tick = timeGetTime();
+	P1_LOG("time is: " << tick);
 }
 
 TCPServer::TCPServer(IIOCPTaskInterface* iotask)

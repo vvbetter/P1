@@ -7,6 +7,12 @@
 #include <WinSock2.h>
 #include <process.h>
 
+TraceLog * TraceLog::GetInstance()
+{
+	static TraceLog log;
+	return &log;
+}
+
 UINT TraceLog::TraceLogThread(LPVOID lParam)
 {
 	TraceLog* pThis = (TraceLog*)lParam;
@@ -14,9 +20,9 @@ UINT TraceLog::TraceLogThread(LPVOID lParam)
 	DWORD bytesWrited;
 	{
 		EnterCriticalSection(&pThis->_cs);
-		if (pThis->_logList.size() > 0)
+		while (pThis->_logList.size() > 0)
 		{
-			log = pThis->_logList.front();
+			log += pThis->_logList.front();
 			pThis->_logList.pop_front();
 		}
 		LeaveCriticalSection(&pThis->_cs);
@@ -36,8 +42,8 @@ UINT TraceLog::TraceLogThread(LPVOID lParam)
 
 void TraceLog::IocpCallBack(LPVOID lParam)
 {
-	IOCP_CONTEXT* pResult = (IOCP_CONTEXT*)lParam;
-	LogContext* p = CONTAINING_RECORD(pResult, LogContext, ov);
+	//IOCP_CONTEXT* pResult = (IOCP_CONTEXT*)lParam;
+	//LogContext* p = CONTAINING_RECORD(pResult, LogContext, ov);
 	//std::cout << "raceLog::IocpCallBack" << std::endl;
 	return;
 }
@@ -47,7 +53,7 @@ bool TraceLog::InitIocpTask(IOCPService* io_service)
 	//创建日志文件
 	_logFile = "Log_" + GetTimeString();
 	wchar_t* pfilename = multiByteToWideChar(_logFile);
-	_fileHandle = CreateFile(pfilename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_FLAG_OVERLAPPED, NULL);
+	_fileHandle = CreateFile(pfilename, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_FLAG_OVERLAPPED, NULL);
 	SAFE_DELETE_ARR(pfilename);
 	if (INVALID_HANDLE_VALUE == _fileHandle)
 	{
@@ -58,7 +64,6 @@ bool TraceLog::InitIocpTask(IOCPService* io_service)
 	memset(_pLogContext, 0, sizeof(LogContext));
 	//初始化临界区
 	InitializeCriticalSection(&_cs);
-	_runFlag = true;
 	//注册日志线程
 	ThreadPool::GetInstance()->AddThreadTask(TraceLogThread, this, MAX_TRHEAD_RUNTIMES, 1);
 	//注册IOCP服务
@@ -68,6 +73,7 @@ bool TraceLog::InitIocpTask(IOCPService* io_service)
 		cout << "TraceLog注册IOCP服务失败" << endl;
 		return false;
 	}
+	_runFlag = true;
 	return true;
 }
 
@@ -79,10 +85,15 @@ bool TraceLog::RegNewIocpTask(IOCP_CONTEXT *)
 
 bool TraceLog::TRACELOG(stringstream& is, TRACELOG_LEVEL lv)
 {
+	if (_runFlag == false)
+	{
+		cout << is.str();
+		return false;
+	}
 	EnterCriticalSection(&_cs);
 	_logList.push_back(is.str());
 	LeaveCriticalSection(&_cs);
-	return false;
+	return true;
 }
 
 TraceLog::TraceLog()

@@ -23,6 +23,7 @@ public:
 	//工作线程
 	static unsigned int  AcceptThread(LPVOID);
 	static unsigned int SendThread(LPVOID);
+	static void HeartCheckTimer(LPVOID);
 public:
 	TCPServer(IIOCPTaskInterface* iotask);
 	virtual ~TCPServer();
