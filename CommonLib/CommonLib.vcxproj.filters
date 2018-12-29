@@ -31,6 +31,9 @@
     <Filter Include="定时器">
       <UniqueIdentifier>{6d918003-ff01-43ad-b39f-9052a0c04e9d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="锁">
+      <UniqueIdentifier>{4aa4e405-c016-4b6c-8ac1-05da4409d6f3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -78,6 +81,9 @@
     <ClInclude Include="TimerManager.h">
       <Filter>定时器</Filter>
     </ClInclude>
+    <ClInclude Include="RWAutoLock.h">
+      <Filter>锁</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -109,6 +115,9 @@
     </ClCompile>
     <ClCompile Include="TimerManager.cpp">
       <Filter>定时器</Filter>
+    </ClCompile>
+    <ClCompile Include="RWAutoLock.cpp">
+      <Filter>锁</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

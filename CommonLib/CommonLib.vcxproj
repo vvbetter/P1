@@ -160,6 +160,7 @@
     <ClInclude Include="IOCPService.h" />
     <ClInclude Include="NetServiceTask.h" />
     <ClInclude Include="P1_Service.h" />
+    <ClInclude Include="RWAutoLock.h" />
     <ClInclude Include="SafeArray.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -174,6 +175,7 @@
     <ClCompile Include="IOCPService.cpp" />
     <ClCompile Include="NetServiceTask.cpp" />
     <ClCompile Include="P1_Service.cpp" />
+    <ClCompile Include="RWAutoLock.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

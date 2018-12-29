@@ -2,6 +2,7 @@
 #include "Interface.h"
 #include "SafeArray.h"
 #include "Cmd.h"
+#include "RWAutoLock.h"
 #include <list>
 #include <map>
 
@@ -40,7 +41,7 @@ private:
 	bool CheckSocketAvailable(SOCKET s);
 private:
 	IIOCPTaskInterface* _IoTaskInterface;
-	CRITICAL_SECTION _cs;
+	RWAutoLock _lock;
 	SOCKET _listenSocket;
 	std::map<HANDLE, NET_CONTEXT*> _clientsContext;
 	std::map<HANDLE, ClientCmd* > _clientCmd;

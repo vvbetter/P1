@@ -23,7 +23,6 @@ bool TCPServer::InitServer()
 		P1_LOG("TCPServer Listen Error:" << WSAGetLastError());
 		return false;
 	}
-	InitializeCriticalSection(&_cs);
 	ThreadPool::GetInstance()->AddThreadTask(AcceptThread, this, MAX_TRHEAD_RUNTIMES, 1);
 	ThreadPool::GetInstance()->AddThreadTask(SendThread, this, MAX_TRHEAD_RUNTIMES, 4);
 	TimerManager::GetInstance()->CreateTimer(HeartCheckTimer, this, 5000);
@@ -58,7 +57,7 @@ bool TCPServer::SendCmdData(SOCKET s, NetCmd * pCmd)
 	}
 	bool iResult = false;
 	ClientCmd* pClientCmd = NULL;
-	EnterCriticalSection(&_cs);
+	_lock.ReadLock();
 	auto it = _clientCmd.find((HANDLE)s);
 	if (it != _clientCmd.end())
 	{
@@ -79,7 +78,7 @@ bool TCPServer::SendCmdData(SOCKET s, NetCmd * pCmd)
 			}
 		}
 	}
-	LeaveCriticalSection(&_cs);
+	_lock.ReadUnLock();
 	return iResult;
 }
 
@@ -105,7 +104,7 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 	TCPServer* s = (TCPServer*)lParam;
 	std::map<SOCKET, std::vector< NetCmd*> >tempCmds;
 	auto& clientCmds = s->_clientCmd;
-	EnterCriticalSection(&s->_cs);
+	s->_lock.ReadLock();
 	for (auto it = clientCmds.begin(); it != clientCmds.end(); ++it)
 	{
 		UINT cmdLength = 0;
@@ -116,6 +115,10 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 		while (pClientCmds->sendArray->HasItem() && cmdCount < FRAME_NUMBER_SEND_DATA)
 		{
 			NetCmd* pCmd = pClientCmds->sendArray->GetItemNoRemove();
+			if (pCmd == NULL)
+			{
+				break;
+			}
 			if (cmdLength + pCmd->length < SOCKET_BUFFER_SIZE)
 			{
 				vecCmds[cmdCount] = pCmd;
@@ -130,7 +133,7 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 		}
 		tempCmds[clientSocket] = vecCmds;
 	}
-	LeaveCriticalSection(&s->_cs);
+	s->_lock.ReadUnLock();
 
 	if (tempCmds.size() == 0)
 	{
@@ -177,9 +180,7 @@ void TCPServer::HeartCheckTimer(LPVOID lParam)
 {
 	TCPServer * pServer = (TCPServer*)lParam;
 	std::vector<SOCKET> invalidSocket;
-
-	EnterCriticalSection(&pServer->_cs);
-
+	pServer->_lock.ReadLock();
 	for (auto it = pServer->_clientsContext.begin(); it != pServer->_clientsContext.end(); ++it)
 	{
 		if (!pServer->CheckSocketAvailable((SOCKET)it->first))
@@ -187,7 +188,7 @@ void TCPServer::HeartCheckTimer(LPVOID lParam)
 			invalidSocket.push_back((SOCKET)it->first);
 		}
 	}
-	LeaveCriticalSection(&pServer->_cs);
+	pServer->_lock.ReadUnLock();
 	for (auto it = invalidSocket.begin(); it != invalidSocket.end(); ++it)
 	{
 		pServer->RemoveClient(*it);
@@ -205,7 +206,6 @@ TCPServer::TCPServer(IIOCPTaskInterface* iotask)
 TCPServer::~TCPServer()
 {
 	RemoveAllClient();
-	DeleteCriticalSection(&_cs);
 }
 
 bool TCPServer::RecvReq(NET_CONTEXT * clientContext)
@@ -234,7 +234,7 @@ bool TCPServer::SendReq(SOCKET s, char* buff, UINT length)
 	int iResult = SOCKET_ERROR;
 	DWORD byteSent = 0;
 	DWORD flag = 0;
-	EnterCriticalSection(&_cs);
+	_lock.ReadLock();
 	auto it = _clientsContext.find((HANDLE)s);
 	if (it != _clientsContext.end())
 	{
@@ -246,7 +246,7 @@ bool TCPServer::SendReq(SOCKET s, char* buff, UINT length)
 		P1_LOG("SOCKET " << s << " Time = " << tick << " Senddata length =" << length << " data= " << ((TestNetCmd*)buff)->data << " use time " << (tick - ((TestNetCmd*)buff)->recvTime));
 		ret = true;
 	}
-	LeaveCriticalSection(&_cs);
+	_lock.ReadUnLock();
 
 	if (ret == false)
 	{
@@ -267,7 +267,7 @@ bool TCPServer::SendReq(SOCKET s, char* buff, UINT length)
 
 bool TCPServer::RemoveClient(SOCKET clientSocket)
 {
-	EnterCriticalSection(&_cs);
+	_lock.WriteLock();
 	auto it = _clientsContext.find((HANDLE)clientSocket);
 	if (it != _clientsContext.end())
 	{
@@ -286,13 +286,13 @@ bool TCPServer::RemoveClient(SOCKET clientSocket)
 		closesocket(s);
 		_clientCmd.erase(itCmd);
 	}
-	LeaveCriticalSection(&_cs);
+	_lock.WriteUnlock();
 	return true;
 }
 
 bool TCPServer::RemoveAllClient()
 {
-	EnterCriticalSection(&_cs);
+	_lock.WriteLock();
 	for (auto it = _clientsContext.begin(); it != _clientsContext.end(); ++it)
 	{
 		NET_CONTEXT* p = it->second;
@@ -308,7 +308,7 @@ bool TCPServer::RemoveAllClient()
 	}
 	_clientsContext.clear();
 	_clientCmd.clear();
-	LeaveCriticalSection(&_cs);
+	_lock.WriteUnlock();
 	return true;
 }
 
@@ -322,13 +322,13 @@ bool TCPServer::AddNewClient(SOCKET clientSocket)
 	clientContext->pNetServer = this;
 
 	ClientCmd* pClientCmd = new ClientCmd();
-	pClientCmd->recvArray = new SafeNetCmdArray(256);
-	pClientCmd->sendArray = new SafeNetCmdArray(256);
+	pClientCmd->recvArray = new SafeNetCmdArray(1000);
+	pClientCmd->sendArray = new SafeNetCmdArray(1000);
 
-	EnterCriticalSection(&_cs);
+	_lock.WriteLock();
 	_clientsContext[(HANDLE)clientSocket] = clientContext;
 	_clientCmd[(HANDLE)clientSocket] = pClientCmd;
-	LeaveCriticalSection(&_cs);
+	_lock.WriteUnlock();
 
 	bool iResult = _IoTaskInterface->RegNewIocpTask(clientContext);
 	if (iResult)
