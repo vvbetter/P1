@@ -23,7 +23,7 @@ inline T* CreateNetCmd(USHORT mainCmd, USHORT subCmd)
 template<class T>
 inline T* CreateNetCmd(LPVOID src)
 {
-	_ASSERT(((NetCmd*)src)->length == sizeof(T));
+	//_ASSERT(((NetCmd*)src)->length == sizeof(T));
 	if (((NetCmd*)src)->length != sizeof(T))
 	{
 		return NULL;

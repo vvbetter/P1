@@ -160,10 +160,26 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 	return 0;
 }
 
-void TCPServer::HeartCheckTimer(LPVOID)
+void TCPServer::HeartCheckTimer(LPVOID lParam)
 {
-	DWORD tick = timeGetTime();
-	P1_LOG("time is: " << tick);
+	TCPServer * pServer = (TCPServer*)lParam;
+	std::vector<SOCKET> invalidSocket;
+
+	EnterCriticalSection(&pServer->_cs);
+
+	for (auto it = pServer->_clientsContext.begin(); it != pServer->_clientsContext.end(); ++it)
+	{
+		if (!pServer->CheckSocketAvailable((SOCKET)it->first))
+		{
+			invalidSocket.push_back((SOCKET)it->first);
+		}
+	}
+	LeaveCriticalSection(&pServer->_cs);
+	for (auto it = invalidSocket.begin(); it != invalidSocket.end(); ++it)
+	{
+		pServer->RemoveClient(*it);
+		P1_LOG("Remove Socket :" << *it);
+	}
 }
 
 TCPServer::TCPServer(IIOCPTaskInterface* iotask)
@@ -201,6 +217,7 @@ bool TCPServer::RecvReq(NET_CONTEXT * clientContext)
 
 bool TCPServer::SendReq(SOCKET s, char* buff, UINT length)
 {
+	DWORD tick = timeGetTime();
 	bool ret = false;
 	int iResult = SOCKET_ERROR;
 	DWORD byteSent = 0;
@@ -213,7 +230,7 @@ bool TCPServer::SendReq(SOCKET s, char* buff, UINT length)
 		pContext->wsaSendBuf.buf = buff;
 		pContext->wsaSendBuf.len = length;
 		iResult = WSASend(s, &pContext->wsaSendBuf, 1, &byteSent, flag, &pContext->ov, NULL);
-		P1_LOG("send Data");
+		P1_LOG("SOCKET "<<s<< " Time = " << tick << " Senddata length =" << length << " data= " << ((TestNetCmd*)buff)->data);
 		ret = true;
 	}
 	LeaveCriticalSection(&_cs);
@@ -242,7 +259,8 @@ bool TCPServer::RemoveClient(SOCKET clientSocket)
 	if (it != _clientsContext.end())
 	{
 		NET_CONTEXT* context = it->second;
-		delete context;
+		context->pNetServer = NULL;
+		SAFE_DELETE(context);
 		_clientsContext.erase(it);
 	}
 	auto itCmd = _clientCmd.find((HANDLE)clientSocket);
@@ -359,6 +377,15 @@ bool TCPServer::RecvNetCmdData(SOCKET clientSocket, char * buf)
 			break;
 		}
 	}
-	P1_LOG(buf);
 	return false;
+}
+
+bool TCPServer::CheckSocketAvailable(SOCKET s)
+{
+	int iCheck = send(s, "", 0, 0);
+	if (iCheck == SOCKET_ERROR)
+	{
+		return false;
+	}
+	return true;
 }

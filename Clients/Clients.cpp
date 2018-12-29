@@ -2,12 +2,7 @@
 //
 
 #include "pch.h"
-#include <iostream>
-#include <WinSock2.h>
-#include <process.h>
-#include <string>
-#include <sstream>
-#pragma comment(lib,"Ws2_32.lib")
+#include "Clients.h"
 
 struct TestData
 {
@@ -24,119 +19,70 @@ struct TestData
 	}
 };
 
-using namespace std;
-const char* ip = "192.168.0.89";
-uint16_t port = 22222;
-
-SOCKET CreateSocket()
-{
-	SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (s == INVALID_SOCKET)
-	{
-		cout << "CreateSocket erroor" << WSAGetLastError() << endl;
-		return INVALID_SOCKET;
-	}
-	sockaddr_in addr;
-	addr.sin_addr.S_un.S_addr = inet_addr(ip);
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
-	while (1)
-	{
-		int iResult = connect(s, (sockaddr*)&addr, sizeof(addr));
-		if (iResult == SOCKET_ERROR)
-		{
-			cout << "Connect failed" << WSAGetLastError() << endl;
-			Sleep(1000);
-		}
-		else
-		{
-			break;
-		}
-	}
-	return s;
-}
-
-class Client
-{
-public:
-	Client() { s = INVALID_SOCKET; isRun = false; };
-	~Client() {};
-
-	bool ConnectToServer()
-	{
-		s = CreateSocket();
-		if (s == INVALID_SOCKET) return false;
-		isRun = true;
-		return true;
-	}
-public:
-	SOCKET s;
-	bool isRun;
-};
-
-
-UINT __stdcall SendThread(LPVOID lParam)
+UINT Client::SendThread(LPVOID lParam)
 {
 	Client* pClient = (Client*)lParam;
 	static UINT n = 0;
 	TestData data;
-	while (1)
 	{
-		if (!pClient->isRun)
-		{
-			Sleep(1);
-			continue;
-		}
 		data.data = n;
 		int ret = send(pClient->s, (char*)&data, sizeof(TestData), 0);
 		if (ret == SOCKET_ERROR)
 		{
+			cout << "Socket " << pClient->s << " send Error :" << WSAGetLastError() << endl;
+			ThreadPool::GetInstance()->RemoveThreadTask(pClient->sendTaskId);
 			return 0;
 		}
-		Sleep(10000);
+		Sleep(10);
 		n++;
 	}
 	return 0;
 }
 
-UINT __stdcall RecvThread(LPVOID lParam)
+UINT Client::RecvThread(LPVOID lParam)
 {
 	Client* pClient = (Client*)lParam;
 	char buf[1024];
-	while (1)
 	{
-		if (!pClient->isRun)
-		{
-			Sleep(1);
-			continue;
-		}
 		memset(buf, 0, 1024);
 		int ret = recv(pClient->s, buf, 1024, 0);
 		if (ret == SOCKET_ERROR)
 		{
+			cout << "Socket " << pClient->s << " recv Error :" << WSAGetLastError() << endl;
+			ThreadPool::GetInstance()->RemoveThreadTask(pClient->recvTaskId);
 			return 0;
 		}
 		TestData* pData = (TestData*)buf;
+		/*
 		cout << "recv size: " << ret
 			<< "length: " << pData->length
 			<< " mainCmd: " << pData->mainCmd
 			<< " subCmd: " << pData->subCmd
 			<< " data: " << pData->data << endl;
+		*/
 	}
 	return 0;
 }
 
-int main()
+Client::Client()
 {
-	WSADATA data;
-	WSAStartup(MAKEWORD(2, 2), &data);
-	Client* pClient = new Client();
-	if (pClient->ConnectToServer())
-	{
-		HANDLE sendHandle = (HANDLE)_beginthreadex(NULL, 0, SendThread, pClient, 0, NULL);
-		HANDLE recvHandle = (HANDLE)_beginthreadex(NULL, 0, RecvThread, pClient, 0, NULL);
-		WaitForSingleObject(sendHandle, INFINITE);
-		WaitForSingleObject(recvHandle, INFINITE);
-	}
-	return 0;
+	
 }
+
+Client::~Client()
+{
+}
+
+bool Client::ConnectToServer()
+{
+	s = CreateSocketClient();
+	if (s == INVALID_SOCKET)
+	{
+		return false;
+	}
+	recvTaskId = ThreadPool::GetInstance()->AddThreadTask(RecvThread, this, MAX_THREAD_RUNNING, 1);
+	sendTaskId = ThreadPool::GetInstance()->AddThreadTask(SendThread, this, MAX_THREAD_RUNNING, 1);
+	isRun = true;
+	return true;
+}
+

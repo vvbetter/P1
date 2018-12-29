@@ -6,7 +6,7 @@
 #include <Windows.h>
 #include <timeapi.h>
 
-constexpr UINT32 SOCKET_BUFFER_SIZE = 1024*1024;
+constexpr UINT32 SOCKET_BUFFER_SIZE = 8*1024;
 
 class IOCPService; 
 class INetServer;

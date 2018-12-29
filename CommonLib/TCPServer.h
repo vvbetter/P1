@@ -37,6 +37,7 @@ private:
 	bool AddNewClient(SOCKET clientSocket);
 	bool ClearClientCmd(ClientCmd* pClient);
 	bool RecvNetCmdData(SOCKET clientSocket, char* buf);
+	bool CheckSocketAvailable(SOCKET s);
 private:
 	IIOCPTaskInterface* _IoTaskInterface;
 	CRITICAL_SECTION _cs;
