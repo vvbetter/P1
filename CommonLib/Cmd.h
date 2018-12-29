@@ -43,4 +43,6 @@ enum MainCmds
 struct TestNetCmd :public NetCmd
 {
 	int data;
+	DWORD sendTime;
+	DWORD recvTime;
 };

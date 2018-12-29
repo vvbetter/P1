@@ -48,6 +48,9 @@ public:
 public:
 	SOCKET s;
 	bool isRun;
+	volatile DWORD lastSendTime;
+	volatile UINT nSend;
+	volatile UINT64 nAverage;
 
 	UINT recvTaskId;
 	UINT sendTaskId;

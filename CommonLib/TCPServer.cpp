@@ -6,7 +6,7 @@
 #include <process.h>
 
 
-constexpr UINT FRAME_NUMBER_SEND_DATA = 10; //每个玩家每帧发送命令数量
+constexpr UINT FRAME_NUMBER_SEND_DATA = 100; //每个玩家每帧发送命令数量
 
 bool TCPServer::InitServer()
 {
@@ -72,6 +72,10 @@ bool TCPServer::SendCmdData(SOCKET s, NetCmd * pCmd)
 					pClientCmd->sendArray->AddItem(pCmd);
 					iResult = true;
 				}
+				else
+				{
+					P1_LOG("Client " << s << " does not have space!");
+				}
 			}
 		}
 	}
@@ -104,15 +108,25 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 	EnterCriticalSection(&s->_cs);
 	for (auto it = clientCmds.begin(); it != clientCmds.end(); ++it)
 	{
+		UINT cmdLength = 0;
 		UINT cmdCount = 0;
 		std::vector<NetCmd*> vecCmds(FRAME_NUMBER_SEND_DATA, NULL);
 		SOCKET clientSocket = (SOCKET)it->first;
 		ClientCmd* pClientCmds = it->second;
 		while (pClientCmds->sendArray->HasItem() && cmdCount < FRAME_NUMBER_SEND_DATA)
 		{
-			NetCmd* pCmd = pClientCmds->sendArray->GetItem();
-			vecCmds[cmdCount] = pCmd;
-			++cmdCount;
+			NetCmd* pCmd = pClientCmds->sendArray->GetItemNoRemove();
+			if (cmdLength + pCmd->length < SOCKET_BUFFER_SIZE)
+			{
+				vecCmds[cmdCount] = pCmd;
+				++cmdCount;
+				pClientCmds->sendArray->RemoveTopItem();
+				cmdLength += pCmd->length;
+			}
+			else
+			{
+				break;
+			}
 		}
 		tempCmds[clientSocket] = vecCmds;
 	}
@@ -156,7 +170,6 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 		}
 	}
 	delete[] sendBuff;
-	Sleep(1);
 	return 0;
 }
 
@@ -217,7 +230,6 @@ bool TCPServer::RecvReq(NET_CONTEXT * clientContext)
 
 bool TCPServer::SendReq(SOCKET s, char* buff, UINT length)
 {
-	DWORD tick = timeGetTime();
 	bool ret = false;
 	int iResult = SOCKET_ERROR;
 	DWORD byteSent = 0;
@@ -230,7 +242,8 @@ bool TCPServer::SendReq(SOCKET s, char* buff, UINT length)
 		pContext->wsaSendBuf.buf = buff;
 		pContext->wsaSendBuf.len = length;
 		iResult = WSASend(s, &pContext->wsaSendBuf, 1, &byteSent, flag, &pContext->ov, NULL);
-		P1_LOG("SOCKET "<<s<< " Time = " << tick << " Senddata length =" << length << " data= " << ((TestNetCmd*)buff)->data);
+		DWORD tick = timeGetTime();
+		P1_LOG("SOCKET " << s << " Time = " << tick << " Senddata length =" << length << " data= " << ((TestNetCmd*)buff)->data << " use time " << (tick - ((TestNetCmd*)buff)->recvTime));
 		ret = true;
 	}
 	LeaveCriticalSection(&_cs);
@@ -352,6 +365,7 @@ bool TCPServer::ClearClientCmd(ClientCmd* pClient)
 bool TCPServer::RecvNetCmdData(SOCKET clientSocket, char * buf)
 {
 	UINT offset = 0;
+	DWORD tick = timeGetTime();
 	while (offset < SOCKET_BUFFER_SIZE)
 	{
 		NetCmd* pCmd = (NetCmd*)(buf + offset);
@@ -370,7 +384,12 @@ bool TCPServer::RecvNetCmdData(SOCKET clientSocket, char * buf)
 			TestNetCmd *pCmd = CreateNetCmd<TestNetCmd>(buf);
 			if (NULL != pCmd)
 			{
+				pCmd->recvTime = tick;
 				SendCmdData(clientSocket, pCmd);
+			}
+			else
+			{
+				P1_LOG("CreateNetCmd Error MainCmd:" << mainCmd << " SubCmd: :" << subCmd << " length :" << len);
 			}
 		}
 		default:
