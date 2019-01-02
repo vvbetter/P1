@@ -2,16 +2,17 @@
 #include "Interface.h"
 #include "SafeArray.h"
 #include "Cmd.h"
-#include "RWAutoLock.h"
-#include <list>
 #include <map>
+#include <boost/lockfree/queue.hpp>
+#include <boost/thread/locks.hpp>
+#include <boost/thread/shared_mutex.hpp>
 
-typedef SafeArray<NetCmd*> SafeNetCmdArray;
+typedef boost::lockfree::queue<NetCmd*> SafeNetCmdQueue;
 
 struct ClientCmd
 {
-	SafeNetCmdArray* recvArray; //接收命令队列
-	SafeNetCmdArray* sendArray; //发送命令队列
+	SafeNetCmdQueue recvQueue; //接收命令队列
+	SafeNetCmdQueue sendQueue; //发送命令队列
 };
 
 class TCPServer : public INetServer
@@ -40,8 +41,8 @@ private:
 	bool RecvNetCmdData(SOCKET clientSocket, char* buf);
 	bool CheckSocketAvailable(SOCKET s);
 private:
+	boost::shared_mutex _mutex;
 	IIOCPTaskInterface* _IoTaskInterface;
-	RWAutoLock _lock;
 	SOCKET _listenSocket;
 	std::map<HANDLE, NET_CONTEXT*> _clientsContext;
 	std::map<HANDLE, ClientCmd* > _clientCmd;

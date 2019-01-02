@@ -2,22 +2,14 @@
 #ifndef __COMMMON_HPP__
 #define __COMMMON_HPP__
 
-
-#include "Interface.h"
 #include "TraceLog.h"
+#include <timeapi.h>
 #include <string>
 #include <iostream>
 #include <sstream>
 
 #define SAFE_DELETE(x) if(x){delete (x); (x) = NULL;}
 #define SAFE_DELETE_ARR(x) if(x){ delete[] (x); (x) = NULL; }
-
-#define P1_LOG(x)			\
-{							\
-	std::stringstream ss;	\
-	ss << x << std::endl;	\
-	TraceLog::GetInstance()->TRACELOG(ss);\
-}
 
 inline wchar_t *multiByteToWideChar(const std::string& pKey)
 {
@@ -98,7 +90,7 @@ inline HANDLE CreateSocket(SOCKETTYPE type, UINT ip, UINT16& port, bool ov = fal
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
 		addr.sin_addr.S_un.S_addr = htonl(ip);
-		int ret = bind(s, (SOCKADDR*)&addr, sizeof(SOCKADDR_IN));
+		int ret = ::bind(s, (SOCKADDR*)&addr, sizeof(SOCKADDR_IN));
 		if (ret == SOCKET_ERROR)
 		{
 			P1_LOG("Bind Socket Error:" << WSAGetLastError());

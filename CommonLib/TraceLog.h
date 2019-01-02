@@ -12,11 +12,6 @@ enum TRACELOG_LEVEL
 	LOG_ERROR
 };
 
-struct LogContext :public IOCP_CONTEXT
-{
-
-};
-
 class TraceLog : public IIOCPTaskInterface
 {
 public:
@@ -40,3 +35,9 @@ private:
 	LogContext * _pLogContext;
 };
 
+#define P1_LOG(x)			\
+{							\
+	std::stringstream ss;	\
+	ss << x << std::endl;	\
+	TraceLog::GetInstance()->TRACELOG(ss);\
+}

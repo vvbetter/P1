@@ -57,28 +57,21 @@ bool TCPServer::SendCmdData(SOCKET s, NetCmd * pCmd)
 	}
 	bool iResult = false;
 	ClientCmd* pClientCmd = NULL;
-	_lock.ReadLock();
-	auto it = _clientCmd.find((HANDLE)s);
-	if (it != _clientCmd.end())
 	{
-		pClientCmd = it->second;
-		if (NULL != pClientCmd)
+		boost::shared_lock_guard<boost::shared_mutex> lk(_mutex);
+		auto it = _clientCmd.find((HANDLE)s);
+		if (it != _clientCmd.end())
 		{
-			if (NULL != pClientCmd->sendArray)
+			pClientCmd = it->second;
+			if (pClientCmd)
 			{
-				if (pClientCmd->sendArray->HasSpace())
-				{
-					pClientCmd->sendArray->AddItem(pCmd);
-					iResult = true;
-				}
-				else
+				if (!pClientCmd->sendQueue.bounded_push(pCmd))
 				{
 					P1_LOG("Client " << s << " does not have space!");
 				}
 			}
 		}
 	}
-	_lock.ReadUnLock();
 	return iResult;
 }
 
@@ -101,40 +94,45 @@ unsigned int TCPServer::AcceptThread(LPVOID lParam)
 
 unsigned int TCPServer::SendThread(LPVOID lParam)
 {
-	TCPServer* s = (TCPServer*)lParam;
+	TCPServer* pServer = (TCPServer*)lParam;
 	std::map<SOCKET, std::vector< NetCmd*> >tempCmds;
-	auto& clientCmds = s->_clientCmd;
-	s->_lock.ReadLock();
-	for (auto it = clientCmds.begin(); it != clientCmds.end(); ++it)
+	auto& clientCmds = pServer->_clientCmd;
 	{
-		UINT cmdLength = 0;
-		UINT cmdCount = 0;
-		std::vector<NetCmd*> vecCmds(FRAME_NUMBER_SEND_DATA, NULL);
-		SOCKET clientSocket = (SOCKET)it->first;
-		ClientCmd* pClientCmds = it->second;
-		while (pClientCmds->sendArray->HasItem() && cmdCount < FRAME_NUMBER_SEND_DATA)
+		boost::shared_lock_guard<boost::shared_mutex> lk(pServer->_mutex);
+		for (auto it = clientCmds.begin(); it != clientCmds.end(); ++it)
 		{
-			NetCmd* pCmd = pClientCmds->sendArray->GetItemNoRemove();
-			if (pCmd == NULL)
+			UINT cmdLength = 0;
+			UINT cmdCount = 0;
+			std::vector<NetCmd*> vecCmds(FRAME_NUMBER_SEND_DATA, NULL);
+			SOCKET clientSocket = (SOCKET)it->first;
+			SafeNetCmdQueue& sendQueue = it->second->sendQueue;
+			while (cmdCount < FRAME_NUMBER_SEND_DATA)
 			{
-				break;
+				NetCmd* pCmd = NULL;
+				if (!sendQueue.pop<NetCmd*>(pCmd))
+				{
+					break;
+				}
+				if (pCmd == NULL)
+				{
+					continue;
+				}
+				if (cmdLength + pCmd->length < SOCKET_BUFFER_SIZE)
+				{
+					vecCmds[cmdCount] = pCmd;
+					++cmdCount;
+					cmdLength += pCmd->length;
+				}
+				else
+				{
+					//缓冲区满，放回队列，等待下一次发送
+					sendQueue.bounded_push(pCmd);
+					break;
+				}
 			}
-			if (cmdLength + pCmd->length < SOCKET_BUFFER_SIZE)
-			{
-				vecCmds[cmdCount] = pCmd;
-				++cmdCount;
-				pClientCmds->sendArray->RemoveTopItem();
-				cmdLength += pCmd->length;
-			}
-			else
-			{
-				break;
-			}
+			tempCmds[clientSocket] = vecCmds;
 		}
-		tempCmds[clientSocket] = vecCmds;
 	}
-	s->_lock.ReadUnLock();
-
 	if (tempCmds.size() == 0)
 	{
 		return 0;
@@ -160,7 +158,7 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 				}
 				else
 				{
-					s->SendReq(clientSocket, sendBuff, offset);
+					pServer->SendReq(clientSocket, sendBuff, offset);
 					offset = 0;
 					continue;
 				}
@@ -169,7 +167,7 @@ unsigned int TCPServer::SendThread(LPVOID lParam)
 		}
 		if (offset != 0)
 		{
-			s->SendReq(clientSocket, sendBuff, offset);
+			pServer->SendReq(clientSocket, sendBuff, offset);
 		}
 	}
 	delete[] sendBuff;
@@ -180,15 +178,16 @@ void TCPServer::HeartCheckTimer(LPVOID lParam)
 {
 	TCPServer * pServer = (TCPServer*)lParam;
 	std::vector<SOCKET> invalidSocket;
-	pServer->_lock.ReadLock();
-	for (auto it = pServer->_clientsContext.begin(); it != pServer->_clientsContext.end(); ++it)
 	{
-		if (!pServer->CheckSocketAvailable((SOCKET)it->first))
+		boost::shared_lock_guard<boost::shared_mutex> lk(pServer->_mutex);
+		for (auto it = pServer->_clientsContext.begin(); it != pServer->_clientsContext.end(); ++it)
 		{
-			invalidSocket.push_back((SOCKET)it->first);
+			if (!pServer->CheckSocketAvailable((SOCKET)it->first))
+			{
+				invalidSocket.push_back((SOCKET)it->first);
+			}
 		}
 	}
-	pServer->_lock.ReadUnLock();
 	for (auto it = invalidSocket.begin(); it != invalidSocket.end(); ++it)
 	{
 		pServer->RemoveClient(*it);
@@ -234,19 +233,20 @@ bool TCPServer::SendReq(SOCKET s, char* buff, UINT length)
 	int iResult = SOCKET_ERROR;
 	DWORD byteSent = 0;
 	DWORD flag = 0;
-	_lock.ReadLock();
-	auto it = _clientsContext.find((HANDLE)s);
-	if (it != _clientsContext.end())
 	{
-		NET_CONTEXT* pContext = it->second;
-		pContext->wsaSendBuf.buf = buff;
-		pContext->wsaSendBuf.len = length;
-		iResult = WSASend(s, &pContext->wsaSendBuf, 1, &byteSent, flag, &pContext->ov, NULL);
-		DWORD tick = timeGetTime();
-		P1_LOG("SOCKET " << s << " Time = " << tick << " Senddata length =" << length << " data= " << ((TestNetCmd*)buff)->data << " use time " << (tick - ((TestNetCmd*)buff)->recvTime));
-		ret = true;
+		boost::shared_lock_guard<boost::shared_mutex> lk(_mutex);
+		auto it = _clientsContext.find((HANDLE)s);
+		if (it != _clientsContext.end())
+		{
+			NET_CONTEXT* pContext = it->second;
+			pContext->wsaSendBuf.buf = buff;
+			pContext->wsaSendBuf.len = length;
+			iResult = WSASend(s, &pContext->wsaSendBuf, 1, &byteSent, flag, &pContext->ov, NULL);
+			DWORD tick = timeGetTime();
+			P1_LOG("SOCKET " << s << " Time = " << tick << " Senddata length =" << length << " data= " << ((TestNetCmd*)buff)->data << " use time " << (tick - ((TestNetCmd*)buff)->recvTime));
+			ret = true;
+		}
 	}
-	_lock.ReadUnLock();
 
 	if (ret == false)
 	{
@@ -267,7 +267,7 @@ bool TCPServer::SendReq(SOCKET s, char* buff, UINT length)
 
 bool TCPServer::RemoveClient(SOCKET clientSocket)
 {
-	_lock.WriteLock();
+	boost::unique_lock<boost::shared_mutex> lk(_mutex);
 	auto it = _clientsContext.find((HANDLE)clientSocket);
 	if (it != _clientsContext.end())
 	{
@@ -286,13 +286,12 @@ bool TCPServer::RemoveClient(SOCKET clientSocket)
 		closesocket(s);
 		_clientCmd.erase(itCmd);
 	}
-	_lock.WriteUnlock();
 	return true;
 }
 
 bool TCPServer::RemoveAllClient()
 {
-	_lock.WriteLock();
+	boost::unique_lock<boost::shared_mutex> lk(_mutex);
 	for (auto it = _clientsContext.begin(); it != _clientsContext.end(); ++it)
 	{
 		NET_CONTEXT* p = it->second;
@@ -308,7 +307,6 @@ bool TCPServer::RemoveAllClient()
 	}
 	_clientsContext.clear();
 	_clientCmd.clear();
-	_lock.WriteUnlock();
 	return true;
 }
 
@@ -322,14 +320,11 @@ bool TCPServer::AddNewClient(SOCKET clientSocket)
 	clientContext->pNetServer = this;
 
 	ClientCmd* pClientCmd = new ClientCmd();
-	pClientCmd->recvArray = new SafeNetCmdArray(1000);
-	pClientCmd->sendArray = new SafeNetCmdArray(1000);
-
-	_lock.WriteLock();
-	_clientsContext[(HANDLE)clientSocket] = clientContext;
-	_clientCmd[(HANDLE)clientSocket] = pClientCmd;
-	_lock.WriteUnlock();
-
+	{
+		boost::unique_lock<boost::shared_mutex> lk(_mutex);
+		_clientsContext[(HANDLE)clientSocket] = clientContext;
+		_clientCmd[(HANDLE)clientSocket] = pClientCmd;
+	}
 	bool iResult = _IoTaskInterface->RegNewIocpTask(clientContext);
 	if (iResult)
 	{
@@ -341,24 +336,25 @@ bool TCPServer::AddNewClient(SOCKET clientSocket)
 bool TCPServer::ClearClientCmd(ClientCmd* pClient)
 {
 	if (NULL == pClient) return false;
-
-	SafeNetCmdArray* pCmd = NULL;
+	NetCmd* pCmd = NULL;
 	//删除接受队列
-	pCmd = pClient->recvArray;
-	while (pCmd->HasItem())
+	SafeNetCmdQueue& recvQueue = pClient->recvQueue;
+	while (recvQueue.pop<NetCmd*>(pCmd))
 	{
-		NetCmd* p = pCmd->GetItem();
-		SAFE_DELETE(p);
+		if (pCmd)
+		{
+			SAFE_DELETE(pCmd);
+		}
 	}
-	SAFE_DELETE(pCmd);
 	//删除发送队列
-	pCmd = pClient->sendArray;
-	while (pCmd->HasItem())
+	SafeNetCmdQueue& sendQueue = pClient->sendQueue;
+	while (sendQueue.pop<NetCmd*>(pCmd))
 	{
-		NetCmd* p = pCmd->GetItem();
-		SAFE_DELETE(p);
+		if (pCmd)
+		{
+			SAFE_DELETE(pCmd);
+		}
 	}
-	SAFE_DELETE(pCmd);
 	return true;
 }
 

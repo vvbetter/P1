@@ -1,10 +1,9 @@
 #pragma once
 #ifndef _P1_INTERFACE
 #define _P1_INTERFACE
+
 #include <WinSock2.h>
-#include <WS2tcpip.h>
 #include <Windows.h>
-#include <timeapi.h>
 
 constexpr UINT32 SOCKET_BUFFER_SIZE = 8*1024;
 
@@ -30,6 +29,12 @@ struct IOCP_CONTEXT
 {
 	OVERLAPPED ov;
 };
+//日志异步结构体
+struct LogContext :public IOCP_CONTEXT
+{
+
+};
+//网络异步结构体
 struct NET_CONTEXT : public IOCP_CONTEXT
 {
 	WSABUF wsaRecvBuf;
