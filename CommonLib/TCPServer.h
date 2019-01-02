@@ -13,6 +13,7 @@ struct ClientCmd
 {
 	SafeNetCmdQueue recvQueue; //接收命令队列
 	SafeNetCmdQueue sendQueue; //发送命令队列
+	ClientCmd(UINT QueueSize) :recvQueue(QueueSize), sendQueue(QueueSize) {}
 };
 
 class TCPServer : public INetServer

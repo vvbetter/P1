@@ -319,7 +319,7 @@ bool TCPServer::AddNewClient(SOCKET clientSocket)
 	clientContext->s = (HANDLE)clientSocket;
 	clientContext->pNetServer = this;
 
-	ClientCmd* pClientCmd = new ClientCmd();
+	ClientCmd* pClientCmd = new ClientCmd(1024);
 	{
 		boost::unique_lock<boost::shared_mutex> lk(_mutex);
 		_clientsContext[(HANDLE)clientSocket] = clientContext;
