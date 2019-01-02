@@ -1,5 +1,7 @@
 #pragma once
 #include<string>
+#include<vector>
+#include <map>
 
 const std::string CFG_FILE = "../Config/ServerConfig.json";
 
@@ -9,10 +11,18 @@ struct ServerInfo
 	uint16_t uProt;
 };
 
+
+struct ServerConfig
+{
+	std::string name;
+	std::vector<ServerInfo> infos;
+};
+
+
 class ConfigManager
 {
 public:
-	static ConfigManager& Instance();
+	static ConfigManager& GetInstance();
 private:
 	ConfigManager();
 	~ConfigManager();
@@ -20,11 +30,10 @@ private:
 	ConfigManager& operator= (const ConfigManager&);
 //功能实现	
 public:
-	bool ParseConfigFile(const std::string& cfgFile);
+	bool ParseConfigFile(const std::string& cfgFile = CFG_FILE);
 public:
-	const ServerInfo& GetServerInfo() { return _serverInfo; }
+	//const ServerInfo& GetServerInfo() { return _serverInfo; }
 private:
-	ServerInfo _serverInfo;
-	
+	std::map<int, ServerConfig> _cfg;
 };
 
