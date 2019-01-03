@@ -5,13 +5,11 @@
 #include "TimerManager.h"
 #include <process.h>
 
-
 constexpr UINT FRAME_NUMBER_SEND_DATA = 100; //每个玩家每帧发送命令数量
 
-bool TCPServer::InitServer()
+bool TCPServer::InitServer(const std::string& ip, const USHORT port)
 {
-	UINT16 port = 22222;
-	_listenSocket = (SOCKET)CreateSocket(TCP_SOCKET, 0, port, true);
+	_listenSocket = (SOCKET)CreateSocket(TCP_SOCKET, ip, port, true);
 	if (_listenSocket == INVALID_SOCKET)
 	{
 		P1_LOG("TCPServer InitServer Failed");

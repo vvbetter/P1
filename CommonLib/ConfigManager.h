@@ -15,14 +15,15 @@ struct ServerInfo
 struct ServerConfig
 {
 	std::string name;
-	std::vector<ServerInfo> infos;
+	std::vector<ServerInfo> tcpServer;
+	std::vector<ServerInfo> tcpClient;
 };
 
 
 class ConfigManager
 {
 public:
-	static ConfigManager& GetInstance();
+	static ConfigManager* GetInstance();
 private:
 	ConfigManager();
 	~ConfigManager();
@@ -30,9 +31,9 @@ private:
 	ConfigManager& operator= (const ConfigManager&);
 //功能实现	
 public:
-	bool ParseConfigFile(const std::string& cfgFile = CFG_FILE);
+	bool ParseConfigFile(int serverId, const std::string& cfgFile = CFG_FILE);
 public:
-	//const ServerInfo& GetServerInfo() { return _serverInfo; }
+	const ServerConfig* GetServerCfg();
 private:
 	std::map<int, ServerConfig> _cfg;
 };

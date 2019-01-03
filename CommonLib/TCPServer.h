@@ -20,7 +20,7 @@ class TCPServer : public INetServer
 {
 public:
 	//interface
-	virtual bool InitServer();
+	virtual bool InitServer(const std::string& ip, const USHORT port);
 	virtual bool NetServerCallBack(NET_CONTEXT*);
 	virtual bool SendCmdData(SOCKET s, NetCmd* pCmd);
 	//工作线程

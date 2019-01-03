@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <WS2tcpip.h>
 
 #define SAFE_DELETE(x) if(x){delete (x); (x) = NULL;}
 #define SAFE_DELETE_ARR(x) if(x){ delete[] (x); (x) = NULL; }
@@ -61,7 +62,7 @@ enum SOCKETTYPE
 	UDP_SOCKET
 };
 
-inline HANDLE CreateSocket(SOCKETTYPE type, UINT ip, UINT16& port, bool ov = false)
+inline HANDLE CreateSocket(SOCKETTYPE type,const string& ip,const UINT16& port, bool ov = false)
 {
 	SOCKET s = INVALID_SOCKET;
 	if (true == ov)
@@ -87,15 +88,17 @@ inline HANDLE CreateSocket(SOCKETTYPE type, UINT ip, UINT16& port, bool ov = fal
 	if (s != INVALID_SOCKET)
 	{
 		sockaddr_in addr;
+		addr.sin_addr.S_un.S_addr = INADDR_ANY;
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
-		addr.sin_addr.S_un.S_addr = htonl(ip);
 		int ret = ::bind(s, (SOCKADDR*)&addr, sizeof(SOCKADDR_IN));
 		if (ret == SOCKET_ERROR)
 		{
-			P1_LOG("Bind Socket Error:" << WSAGetLastError());
+			int eCode = WSAGetLastError();
+			P1_LOG("Bind Socket Error:" << eCode);
 			closesocket(s);
 			s = INVALID_SOCKET;
+			return (HANDLE)s;
 		}
 	}
 	else

@@ -90,7 +90,33 @@ Client::~Client()
 
 bool Client::ConnectToServer()
 {
-	s = CreateSocketClient();
+	const char* ip = "120.79.242.138";
+	uint16_t port = 12021;
+
+	s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (s == INVALID_SOCKET)
+	{
+		cout << "CreateSocket erroor" << WSAGetLastError() << endl;
+		return false;
+	}
+	sockaddr_in addr;
+	addr.sin_addr.S_un.S_addr = inet_addr(ip);
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+	while (1)
+	{
+		int iResult = connect(s, (sockaddr*)&addr, sizeof(addr));
+		if (iResult == SOCKET_ERROR)
+		{
+			cout << "Connect failed" << WSAGetLastError() << endl;
+			Sleep(1000);
+		}
+		else
+		{
+			break;
+		}
+	}
+
 	if (s == INVALID_SOCKET)
 	{
 		return false;

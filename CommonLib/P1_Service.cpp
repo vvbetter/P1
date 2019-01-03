@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ConfigManager.h"
 #include "P1_Service.h"
 #include "common.hpp"
 #include "ThreadPool.h"
@@ -17,11 +18,19 @@ P1_Service::~P1_Service()
 	timeEndPeriod(1);
 }
 
-bool P1_Service::P1_Start()
+bool P1_Service::P1_Start(int serverId)
 {
 	std::cout << "------ 服务器初始化......-------" << endl;
 	timeBeginPeriod(1);
 	bool rst = false;
+	//读取配置文件
+	rst = ConfigManager::GetInstance()->ParseConfigFile(serverId);
+	if (false == rst)
+	{
+		std::cout << "解析配置文件失败" << endl;
+		return false;
+	}
+	std::cout << "ConfigManager Init Success" << std::endl;
 	//初始化线程池
 	rst = ThreadPool::GetInstance()->InitThreadPool();
 	if (false == rst)
@@ -55,7 +64,7 @@ bool P1_Service::P1_Start()
 		return rst;
 	}
 	std::cout << ("TraceLog Init Success") << endl;
-
+	//初始化网络服务器
 	rst = _netTasks.InitIocpTask(&_io);
 	if (false == rst)
 	{

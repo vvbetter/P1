@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "NetServiceTask.h"
+#include "ConfigManager.h"
 #include "IOCPService.h"
 #include <iostream>
 
@@ -24,11 +25,19 @@ bool NetServiceTask::InitIocpTask(IOCPService * io_service)
 	}
 	_io = io_service;
 
-	_tcpServer = new TCPServer(this);
-	rst = _tcpServer->InitServer();
-	if (rst == false)
+	const ServerConfig* s_cfg = ConfigManager::GetInstance()->GetServerCfg();
+	if (s_cfg == NULL)
 	{
 		return false;
+	}
+	for (auto it = s_cfg->tcpServer.begin(); it != s_cfg->tcpServer.end(); ++it)
+	{
+		TCPServer* _tcpServer = new TCPServer(this);
+		rst = _tcpServer->InitServer(it->ip, it->uProt);
+		if (rst == false)
+		{
+			return false;
+		}
 	}
 	return true;
 }

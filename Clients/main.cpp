@@ -14,7 +14,7 @@ int main(int argc,char* argv[])
 
 	WSADATA data;
 	WSAStartup(MAKEWORD(2, 2), &data);
-	ThreadPool::GetInstance()->InitThreadPool(40);
+	ThreadPool::GetInstance()->InitThreadPool(20);
 
 	bool iResult = true;
 	for (int i = 0; i < CinetsNum; ++i)

@@ -1,7 +1,7 @@
 #pragma once
 #ifndef _P1_INTERFACE
 #define _P1_INTERFACE
-
+#include <string>
 #include <WinSock2.h>
 #include <Windows.h>
 
@@ -55,7 +55,7 @@ public:
 class INetServer
 {
 public:
-	virtual bool InitServer() = 0;
+	virtual bool InitServer(const std::string& ip,const USHORT port) = 0;
 	virtual bool NetServerCallBack(NET_CONTEXT*) = 0;
 	virtual bool SendCmdData(SOCKET s, NetCmd* pCmd) = 0;
 };

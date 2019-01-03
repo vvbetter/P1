@@ -8,7 +8,7 @@ public:
 	P1_Service();
 	~P1_Service();
 public:
-	bool P1_Start();
+	bool P1_Start(int serverId);
 private:
 	IOCPService _io;
 	NetServiceTask _netTasks;

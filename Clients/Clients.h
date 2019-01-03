@@ -6,8 +6,8 @@ using namespace std;
 
 inline SOCKET CreateSocketClient()
 {
-	const char* ip = "192.168.0.89";
-	uint16_t port = 22222;
+	const char* ip = "120.79.242.138";
+	uint16_t port = 12021;
 
 	SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (s == INVALID_SOCKET)
