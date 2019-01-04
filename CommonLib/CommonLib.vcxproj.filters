@@ -84,6 +84,9 @@
     <ClInclude Include="RWAutoLock.h">
       <Filter>锁</Filter>
     </ClInclude>
+    <ClInclude Include="TCPClient.h">
+      <Filter>网络</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -118,6 +121,9 @@
     </ClCompile>
     <ClCompile Include="RWAutoLock.cpp">
       <Filter>锁</Filter>
+    </ClCompile>
+    <ClCompile Include="TCPClient.cpp">
+      <Filter>网络</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

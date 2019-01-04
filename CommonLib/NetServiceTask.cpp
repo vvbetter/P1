@@ -30,14 +30,19 @@ bool NetServiceTask::InitIocpTask(IOCPService * io_service)
 	{
 		return false;
 	}
+	//初始化服务器
 	for (auto it = s_cfg->tcpServer.begin(); it != s_cfg->tcpServer.end(); ++it)
 	{
-		TCPServer* _tcpServer = new TCPServer(this);
-		rst = _tcpServer->InitServer(it->ip, it->uProt);
+		TCPServer* tcpServer = new TCPServer(this);
+		rst = tcpServer->InitServer("0", it->uProt);
 		if (rst == false)
 		{
+			delete tcpServer;
 			return false;
 		}
+		std::stringstream ss;
+		ss << it->ip << ":" << it->uProt;
+		_tcpServers.insert(std::make_pair(tcpServer, ss.str()));
 	}
 	return true;
 }
@@ -46,6 +51,20 @@ bool NetServiceTask::RegNewIocpTask(IOCP_CONTEXT* pContext)
 {
 	NET_CONTEXT* p = CONTAINING_RECORD(pContext, NET_CONTEXT, ov);
 	return _io->RegisterHandle(p->s, this);
+}
+
+TCPServer * NetServiceTask::QueryTcpServer(const std::string & ip, const uint16_t port)
+{
+	std::stringstream ss;
+	ss << ip << ":" << port;
+	for(auto it = _tcpServers.begin(); it != _tcpServers.end(); ++it)
+	{
+		if (it->second == ss.str())
+		{
+			return it->first;
+		}
+	}
+	return NULL;
 }
 
 NetServiceTask::NetServiceTask()

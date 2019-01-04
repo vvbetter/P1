@@ -8,7 +8,7 @@
 constexpr UINT32 SOCKET_BUFFER_SIZE = 8*1024;
 
 class IOCPService; 
-class INetServer;
+class INetService;
 struct NetCmd;
 
 enum NET_OPERATOR
@@ -41,7 +41,7 @@ struct NET_CONTEXT : public IOCP_CONTEXT
 	WSABUF wsaSendBuf;
 	char buf[SOCKET_BUFFER_SIZE];
 	HANDLE s;
-	INetServer* pNetServer;
+	INetService* pNetServer;
 	NET_OPERATOR op;
 };
 class IIOCPTaskInterface
@@ -52,7 +52,7 @@ public:
 	virtual bool RegNewIocpTask(IOCP_CONTEXT*) = 0;
 };
 
-class INetServer
+class INetService
 {
 public:
 	virtual bool InitServer(const std::string& ip,const USHORT port) = 0;

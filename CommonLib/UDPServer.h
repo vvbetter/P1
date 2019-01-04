@@ -1,6 +1,6 @@
 #pragma once
 #include "Interface.h"
-class UDPServer : public INetServer
+class UDPServer : public INetService
 {
 public:
 	static unsigned int __stdcall UserCheckThread(LPVOID);

@@ -16,7 +16,7 @@ struct ClientCmd
 	ClientCmd(UINT QueueSize) :recvQueue(QueueSize), sendQueue(QueueSize) {}
 };
 
-class TCPServer : public INetServer
+class TCPServer : public INetService
 {
 public:
 	//interface

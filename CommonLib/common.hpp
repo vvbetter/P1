@@ -88,7 +88,7 @@ inline HANDLE CreateSocket(SOCKETTYPE type,const string& ip,const UINT16& port, 
 	if (s != INVALID_SOCKET)
 	{
 		sockaddr_in addr;
-		addr.sin_addr.S_un.S_addr = INADDR_ANY;
+		addr.sin_addr.S_un.S_addr = inet_addr(ip.c_str());
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
 		int ret = ::bind(s, (SOCKADDR*)&addr, sizeof(SOCKADDR_IN));
