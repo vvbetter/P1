@@ -38,13 +38,10 @@ inline SOCKET CreateSocketClient()
 class Client
 {
 public:
-	static UINT SendThread(LPVOID lParam);
-	static UINT RecvThread(LPVOID lParam);
-public:
 	Client();;
 	~Client();;
 
-	bool ConnectToServer();
+	bool ConnectToServer(char* ip,int port);
 public:
 	SOCKET s;
 	bool isRun;

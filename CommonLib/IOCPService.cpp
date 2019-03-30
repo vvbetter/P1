@@ -29,9 +29,9 @@ unsigned  __stdcall IOCPService::CompletionPortThread(LPVOID lParam)
 		pov = NULL;
 		BOOL fSuccess = GetQueuedCompletionStatus(
 			*IocpHandle,         // Completion port handle  
-			&dwNoOfBytes,  // Bytes transferred  
+			&dwNoOfBytes,		// Bytes transferred  
 			&ulKey,
-			&pov,          // OVERLAPPED structure  
+			&pov,				// OVERLAPPED structure  
 			IOCP_TIME_OUT       // Notification time-out interval  
 		);
 		if (!fSuccess)

@@ -57,7 +57,7 @@ UINT TCPClient::ClientSendThread(LPVOID lParam)
 	return 0;
 }
 
-TCPClient::TCPClient(IIOCPTaskInterface* iotask)
+TCPClient::TCPClient(IIOCPTaskInterface* iotask):_sendQueue(200),_recvQueue(200)
 {
 	_iotask = iotask;
 }
