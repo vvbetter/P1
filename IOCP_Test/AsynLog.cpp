@@ -41,7 +41,7 @@ bool AsynLog::initAsynLog()
 		std::cout << "InitAsynLog CreateFile Error :" << GetLastError() << std::endl;
 		return false;
 	}
-	if (!io_service.registerHandle(fileHandle, this, 8))
+	if (!io_service.registerHandle(fileHandle, this, io_service.threadSums()))
 	{
 		return false;
 	}

@@ -1,3 +1,4 @@
+#include "..\IOCP_Test\ThreadPool.h"
 #include "stdafx.h"
 #include "ThreadPool.h"
 #include <process.h>
@@ -145,9 +146,4 @@ const ThreadTask ThreadPool::GetThreadTask()
 ThreadPool::ThreadPool()
 {
 	_runFlag = false;
-}
-
-ThreadPool::~ThreadPool()
-{
-	CloseThreadPool();
 }

@@ -11,7 +11,7 @@ IO_Service::IO_Service()
 
 IO_Service::~IO_Service()
 {
-	CloseHandle(ioHandle);
+
 }
 
 void IO_Service::IoServiceExecuteThread(HANDLE hIoHanle, DWORD* threadState,DWORD threadId)

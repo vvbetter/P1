@@ -15,6 +15,7 @@ public:
 	bool shutDown();
 	bool registerHandle(HANDLE handle, IO_COMPLETIONKEY* iock, DWORD concurrent);
 	bool postIocpTask(IO_OVERLAPPED* pOv, IO_COMPLETIONKEY* iock, DWORD dwNumberOfBytesTransferred);
+	DWORD threadSums() { return vecThreads.size(); }
 private:
 	DWORD threadState;		//线程状态
 	HANDLE ioHandle;		//完成IO Handle

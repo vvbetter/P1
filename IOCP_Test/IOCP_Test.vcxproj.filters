@@ -13,21 +13,30 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="日志">
+      <UniqueIdentifier>{e277b399-81c7-42b0-995a-81d9b3fe6b3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="IO">
+      <UniqueIdentifier>{d96ec852-8d30-4c02-9268-a37419571ddd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="IO_Service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="typedef.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="AsynLog.h">
+    <ClInclude Include="common.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="common.hpp">
+    <ClInclude Include="AsynLog.h">
+      <Filter>日志</Filter>
+    </ClInclude>
+    <ClInclude Include="IO_Service.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadPool.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,10 +47,13 @@
     <ClCompile Include="IOCP_Test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="IO_Service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="AsynLog.cpp">
+      <Filter>日志</Filter>
+    </ClCompile>
+    <ClCompile Include="IO_Service.cpp">
+      <Filter>IO</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

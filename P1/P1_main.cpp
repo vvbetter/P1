@@ -2,14 +2,25 @@
 #include <istream>
 #include <ostream>
 #include <string>
+#include <vector>
+#include <functional> 
+#include <typeinfo>
+#include <thread>
 using namespace std;
+
+typedef function<bool(int *)> CallbackFunction;
+
+class Test
+{
+public:
+	bool t1(int *) { cout << "this is t1 " << endl; return false; }
+};
+
 
 int main(int argc, char* argv[])
 {
-	int64_t a = UINT_MAX;
 
-	unsigned int b = static_cast<unsigned int>(a + 1);
-
-	cout << a << "#" << b << endl;
+	cout << (LONG_MAX ^ (1 << 1)) << endl;
 	return 0;
 }
+
