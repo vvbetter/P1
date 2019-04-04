@@ -60,7 +60,7 @@ bool IO_Service::initService()
 	}
 	SYSTEM_INFO info;
 	GetSystemInfo(&info);
-	for (DWORD i = 0; i < info.dwNumberOfProcessors; ++i)
+	for (DWORD i = 0; i < info.dwNumberOfProcessors + 2; ++i)
 	{
 		threadState |= (1 << i);
 		std::thread* t = new std::thread(IoServiceExecuteThread, ioHandle, &threadState, i);

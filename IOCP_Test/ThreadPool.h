@@ -6,7 +6,6 @@
 #include <vector>
 
 #define THREAD_CONCURRENCY_MAX -1
-#define THREAD_UNREGISTER_MASK 0x80000000
 
 typedef std::function<bool(void*)> ThreadCallBackFunction;
 
@@ -15,7 +14,6 @@ struct THREADPOOL_OVERLAPPED :public IO_OVERLAPPED
 	ThreadCallBackFunction fn;
 	void* param;
 	DWORD taskId;
-	DWORD concurrency;
 	DWORD taskState;
 };
 

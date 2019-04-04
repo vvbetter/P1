@@ -38,7 +38,7 @@ int main()
 
 		Test* t = new Test();
 		ThreadCallBackFunction fn = bind(&Test::t1, t, placeholders::_1);
-		DWORD id = threadpool.registerThread(fn, nullptr, 1);
+		DWORD id = threadpool.registerThread(fn, nullptr, -1);
 		Sleep(20000);
 		threadpool.unRegisterThread(id);
 		Sleep(1000);

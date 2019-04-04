@@ -12,7 +12,7 @@ ThreadPool::~ThreadPool()
 
 DWORD ThreadPool::registerThread(ThreadCallBackFunction fn, void * param, DWORD concurrency)
 {
-	if (concurrency == THREAD_CONCURRENCY_MAX)
+	if (concurrency == (DWORD)THREAD_CONCURRENCY_MAX)
 	{
 		concurrency = io_service.threadSums();
 	}
@@ -29,7 +29,6 @@ DWORD ThreadPool::registerThread(ThreadCallBackFunction fn, void * param, DWORD 
 		pov->param = param;
 		pov->taskState = 1;
 		pov->taskId = taskId;
-		pov->concurrency = i;
 		pOvs.push_back(pov);
 		io_service.postIocpTask(pov, this, 0);
 	}
@@ -69,7 +68,6 @@ bool ThreadPool::callBackFunction(IO_OVERLAPPED * pOv, DWORD NumberOfBytesTransf
 		{
 			if ((*it) == pIoov)
 			{
-				//std::cout << "delete concurrency " << pIoov->concurrency << std::endl;
 				delete (*it);
 				(*it) = NULL;
 			}

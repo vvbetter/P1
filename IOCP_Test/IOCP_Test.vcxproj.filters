@@ -37,7 +37,7 @@
       <Filter>IO</Filter>
     </ClInclude>
     <ClInclude Include="ThreadPool.h">
-      <Filter>头文件</Filter>
+      <Filter>IO</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -54,7 +54,7 @@
       <Filter>IO</Filter>
     </ClCompile>
     <ClCompile Include="ThreadPool.cpp">
-      <Filter>源文件</Filter>
+      <Filter>IO</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
