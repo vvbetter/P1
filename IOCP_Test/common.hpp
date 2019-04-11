@@ -1,10 +1,10 @@
 #pragma once
 #ifndef __COMMMON_HPP__
 #define __COMMMON_HPP__
-
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <time.h>
 #include <Windows.h>
 
 #define SAFE_DELETE(x) if(x){delete (x); (x) = NULL;}
@@ -53,5 +53,14 @@ inline static std::string GetTimeString()
 	ss << st.wSecond;
 	return ss.str();
 }
-
+inline const std::string GetTimeStr()
+{
+	time_t NowTime = time(NULL);
+	tm pNowTime;
+	errno_t Error = localtime_s(&pNowTime, &NowTime);
+	std::stringstream ss;
+	ss << pNowTime.tm_year + 1900 << "-" << pNowTime.tm_mon + 1 << "-" << pNowTime.tm_mday << " " << pNowTime.tm_hour << ":" << pNowTime.tm_min << ":" << pNowTime.tm_sec << " ";
+	return ss.str();
+}
+void Log(const CHAR *pcStr, ...);
 #endif // !__COMMMON_HPP__

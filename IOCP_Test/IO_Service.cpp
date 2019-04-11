@@ -11,7 +11,7 @@ IO_Service::IO_Service()
 
 IO_Service::~IO_Service()
 {
-
+	shutDown();
 }
 
 void IO_Service::IoServiceExecuteThread(HANDLE hIoHanle, DWORD* threadState,DWORD threadId)
@@ -34,7 +34,7 @@ void IO_Service::IoServiceExecuteThread(HANDLE hIoHanle, DWORD* threadState,DWOR
 			if (pIoov->op == IO_SHUTDOWN)
 			{
 				(*threadState) &= ((DWORD)(-1) ^ (1 << threadId));
-				std::cout << "Close Thread " << threadId << std::endl;
+				Log("Close IO_Service Thread :%d\n", threadId);
 				break;
 			}
 			//处理回调
@@ -45,7 +45,7 @@ void IO_Service::IoServiceExecuteThread(HANDLE hIoHanle, DWORD* threadState,DWOR
 		}
 		else
 		{
-			std::cout << "GetQueuedCompletionStatus Failed Error: " << GetLastError() << std::endl;
+			Log("GetQueuedCompletionStatus Failed Error: %d\n", GetLastError());
 		}
 	}
 }
@@ -55,7 +55,7 @@ bool IO_Service::initService()
 	ioHandle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	if (ioHandle == NULL)
 	{
-		std::cout << "CreateIoCompletionPort Error: " << GetLastError() << std::endl;
+		Log("CreateIoCompletionPort Error: %d\n", GetLastError());
 		return false;
 	}
 	SYSTEM_INFO info;
@@ -79,7 +79,7 @@ bool IO_Service::shutDown()
 		BOOL bSucess = PostQueuedCompletionStatus(ioHandle, dwNumberOfBytesTransferred, NULL, &pOv->ov);
 		if (!bSucess)
 		{
-			std::cout << "ShutDown PostQueuedCompletionStatus Error: " << GetLastError() << std::endl;
+			Log("ShutDown PostQueuedCompletionStatus Error: %d\n", GetLastError());
 		}
 		Sleep(10);
 	}
@@ -107,7 +107,7 @@ bool IO_Service::registerHandle(HANDLE handle, IO_COMPLETIONKEY * iock, DWORD co
 	HANDLE h = CreateIoCompletionPort(handle, ioHandle, (ULONG_PTR)iock, concurrent);
 	if (h == NULL)
 	{
-		std::cout << "RegisterHandle CreateIoCompletionPort Error: " << GetLastError() << std::endl;
+		Log("RegisterHandle CreateIoCompletionPort Error: %d\n", GetLastError());
 		return false;
 	}
 	return true;
@@ -118,7 +118,7 @@ bool IO_Service::postIocpTask(IO_OVERLAPPED * pOv, IO_COMPLETIONKEY * iock, DWOR
 	BOOL bSucess = PostQueuedCompletionStatus(ioHandle, dwNumberOfBytesTransferred, (ULONG_PTR)iock, &pOv->ov);
 	if (!bSucess)
 	{
-		std::cout << "PostIocpTask PostQueuedCompletionStatus Error: " << GetLastError() << std::endl;
+		Log("PostIocpTask PostQueuedCompletionStatus Error: %d\n", GetLastError());
 	}
 	return bSucess;
 }

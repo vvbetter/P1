@@ -3,6 +3,7 @@
 #include "IO_Service.h"
 #include <string>
 
+
 struct LOG_OVERLAPPED :public IO_OVERLAPPED
 {
 	LOG_OVERLAPPED()
@@ -22,11 +23,10 @@ public:
 	virtual bool callBackFunction(IO_OVERLAPPED* pOv, DWORD NumberOfBytesTransferred);
 	virtual bool shutDown();
 	bool initAsynLog();
-	bool traceLog(const char* data, size_t length);
+	bool traceLog(const char* data);
 private:
 	IO_Service& io_service;
 	std::string logFile;
 	HANDLE fileHandle;
 	int64_t logSize;
 };
-

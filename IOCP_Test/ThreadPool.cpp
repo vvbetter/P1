@@ -32,12 +32,16 @@ DWORD ThreadPool::registerThread(ThreadCallBackFunction fn, void * param, DWORD 
 		pOvs.push_back(pov);
 		io_service.postIocpTask(pov, this, 0);
 	}
-	threadTasks[taskId] = pOvs;
+	{
+		std::lock_guard<std::mutex> locker(mutex);
+		threadTasks[taskId] = pOvs;
+	}
 	return taskId;
 }
 
 bool ThreadPool::unRegisterThread(DWORD threadId)
 {
+	std::lock_guard<std::mutex> locker(mutex);
 	auto taskIt = threadTasks.find(threadId);
 	if (taskIt == threadTasks.end())
 	{
@@ -57,6 +61,7 @@ bool ThreadPool::callBackFunction(IO_OVERLAPPED * pOv, DWORD NumberOfBytesTransf
 	pIoov->fn(pIoov->param);
 	if (pIoov->taskState == 0)
 	{
+		std::lock_guard<std::mutex> locker(mutex);
 		DWORD taskId = pIoov->taskId;
 		auto taskIt = threadTasks.find(taskId);
 		if (taskIt == threadTasks.end())

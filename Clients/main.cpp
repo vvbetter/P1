@@ -1,38 +1,38 @@
 #include "pch.h"
-#include "Clients.h"
-#pragma comment(lib,"Ws2_32.lib")
-#pragma comment(lib,"Winmm.lib")
-
+#include <iostream>
+#include <WinSock2.h>
+#pragma comment(lib, "Winmm.lib")
+#pragma comment(lib, "Ws2_32.lib")
 int main(int argc,char* argv[])
 {
-	if (argc != 4)
-	{
-		cout << "参数错误" << endl;
-		return 0;
-	}
-	cout << "开始连接 " << timeGetTime() << endl;
-	int CinetsNum = atoi(argv[1]);
-	char* ip = argv[2];
-	int port = atoi(argv[3]);
-
+	int iResult = 0;
 	WSADATA wsaData;
-	WSAStartup(MAKEWORD(2, 2), &wsaData);
+	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != NO_ERROR) {
+		wprintf(L"WSAStartup failed with error %d\n", iResult);
+		return 1;
+	}
+	SOCKET sendSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-	bool iResult = true;
-	for (int i = 0; i < CinetsNum; ++i)
+	int n = 1000100;
+	USHORT Port = 50001;
+	sockaddr_in RecvAddr;
+	RecvAddr.sin_family = AF_INET;
+	RecvAddr.sin_port = htons(Port);
+	RecvAddr.sin_addr.s_addr = inet_addr("192.168.0.89");
+
+	char buf[50] = { '1','2','3','4','5','6','7','8','9','0', '1','2','3','4','5','6','7','8','9','0', '1','2','3','4','5','6','7','8','9','0', '1','2','3','4','5','6','7','8','9','0', '1','2','3','4','5','6','7','8','9',0 };
+
+	while (n--)
 	{
-		Client* pClient = new Client();
-		iResult &= pClient->ConnectToServer(ip, port);
-		if (iResult == false)
-		{
-			break;
-		}
+		 int nRst = sendto(sendSocket, buf, 50, 0, (SOCKADDR*)&RecvAddr, sizeof(RecvAddr));
+		 if (nRst == SOCKET_ERROR)
+		 {
+			 std::cout << "error: " << WSAGetLastError() << std::endl;
+		 }
 	}
-	cout << "连接完成 " << timeGetTime() << endl;
-	while (iResult)
-	{
-		Sleep(1000000);
-	}
+	std::cout << "send over " << timeGetTime() << std::endl;
+	closesocket(sendSocket);
 	WSACleanup();
 	return 0;
 }

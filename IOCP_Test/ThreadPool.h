@@ -4,6 +4,7 @@
 #include <functional>
 #include <map>
 #include <vector>
+#include <mutex>
 
 #define THREAD_CONCURRENCY_MAX -1
 
@@ -32,4 +33,5 @@ private:
 	IO_Service& io_service;
 	DWORD threadTaskId;
 	std::map<DWORD, std::vector<THREADPOOL_OVERLAPPED*> > threadTasks;
+	std::mutex mutex;
 };

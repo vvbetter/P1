@@ -29,22 +29,15 @@ public:
 int main()
 {
 	IO_Service io_service;
+	AsynLog log(io_service);
 	if (io_service.initService())
 	{
-		AsynLog log(io_service);
 		log.initAsynLog();
-		
-		ThreadPool threadpool(io_service);
-
-		Test* t = new Test();
-		ThreadCallBackFunction fn = bind(&Test::t1, t, placeholders::_1);
-		DWORD id = threadpool.registerThread(fn, nullptr, -1);
-		Sleep(20000);
-		threadpool.unRegisterThread(id);
-		Sleep(1000);
-		t->print();
+		int n = 100;
+		while (n--)
+		{
+			Log("this is %d \n", n);
+		}
 	}
-	Sleep(2000);
-	io_service.shutDown();
 	return 0;
 }
