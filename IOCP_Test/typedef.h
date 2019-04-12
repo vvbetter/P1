@@ -1,6 +1,4 @@
 #pragma once
-#include <Windows.h>
-
 enum IO_OPERATOR
 {
 	IO_SHUTDOWN = -100,

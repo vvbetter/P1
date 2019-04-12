@@ -125,7 +125,15 @@ int main(int argc, char* argv[])
 		wprintf(L"WSAStartup failed with error %d\n", iResult);
 		return 1;
 	}
+	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != NO_ERROR) {
+		wprintf(L"WSAStartup failed with error %d\n", iResult);
+		return 1;
+	}
+
 	SOCKET RecvSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	int recvBufSize = 500 * 1000000;
+	setsockopt(RecvSocket, SOL_SOCKET, SO_RCVBUF, (char*)&recvBufSize, sizeof(int));
 	RecvSockets.push_back(RecvSocket);
 	unsigned long arg = 1;
 	setsockopt(RecvSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&arg, sizeof(arg));

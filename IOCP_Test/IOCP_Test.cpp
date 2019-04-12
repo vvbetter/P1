@@ -5,39 +5,23 @@
 #include "IO_Service.h"
 #include "AsynLog.h"
 #include "ThreadPool.h"
+#include "UdpServer.h"
 #include <iostream>
 #include <vector>
 #include <sstream>
 using namespace std;
 
-class Test
-{
-public:
-	bool t1(void *) {n = ::InterlockedIncrement(&n);  return true; }
-	long n;
-	Test()
-	{
-		n = 0;
-	}
-	void print()
-	{
-		cout << n << endl;
-	}
-};
-
-
 int main()
 {
+	cout << "--- START TEST ---" << endl;
 	IO_Service io_service;
-	AsynLog log(io_service);
 	if (io_service.initService())
 	{
+		AsynLog log(io_service);
 		log.initAsynLog();
-		int n = 100;
-		while (n--)
-		{
-			Log("this is %d \n", n);
-		}
+		UdpServer s(io_service);
+		s.initServer(50001);
+		Sleep(1000000);
 	}
 	return 0;
 }

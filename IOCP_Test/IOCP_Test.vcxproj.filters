@@ -39,6 +39,9 @@
     <ClInclude Include="ThreadPool.h">
       <Filter>IO</Filter>
     </ClInclude>
+    <ClInclude Include="UdpServer.h">
+      <Filter>IO</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -54,6 +57,9 @@
       <Filter>IO</Filter>
     </ClCompile>
     <ClCompile Include="ThreadPool.cpp">
+      <Filter>IO</Filter>
+    </ClCompile>
+    <ClCompile Include="UdpServer.cpp">
       <Filter>IO</Filter>
     </ClCompile>
   </ItemGroup>
