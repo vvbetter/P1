@@ -5,22 +5,18 @@
 UdpServer::UdpServer(IO_Service& io):ioService(io)
 {
 	recvSocekt = INVALID_SOCKET;
-	n = 0;
+	sOV = NULL;
 }
 
 
 UdpServer::~UdpServer()
 {
+	delete[] sOV;
 }
 
 bool UdpServer::callBackFunction(IO_OVERLAPPED * lpOV, DWORD NumberOfBytesTransferred)
 {
 	UDPSERVER_OVERLAPPED* pOv = CONTAINING_RECORD(lpOV, UDPSERVER_OVERLAPPED, ov);
-	::InterlockedIncrement(&n);
-	if (n % 100000 == 0)
-	{
-		Log("this is n = %u  bytes = %d\n", n, pOv->bytesRecved);
-	}
 	DWORD flag = 0;
 	WSARecvFrom(recvSocekt, &(pOv->wsaBuf), 1, &(pOv->bytesRecved), &flag, (SOCKADDR*)&(pOv->sendAddr), &(pOv->addrLen), &(pOv->ov), NULL);
 	return true;
@@ -66,10 +62,11 @@ bool UdpServer::initServer(USHORT port)
 	DWORD flag = 0;
 	SYSTEM_INFO info;
 	GetSystemInfo(&info);
+	sOV = new UDPSERVER_OVERLAPPED[info.dwNumberOfProcessors];
 	for (DWORD i = 0; i < info.dwNumberOfProcessors; ++i)
 	{
-		UDPSERVER_OVERLAPPED * pOv = new UDPSERVER_OVERLAPPED();
-		WSARecvFrom(recvSocekt, &(pOv->wsaBuf), 1, &(pOv->bytesRecved), &flag, (SOCKADDR*)(&(pOv->sendAddr)), &(pOv->addrLen), &(pOv->ov), NULL);
+		UDPSERVER_OVERLAPPED& pOv = sOV[i];
+		WSARecvFrom(recvSocekt, &(pOv.wsaBuf), 1, &(pOv.bytesRecved), &flag, (SOCKADDR*)(&(pOv.sendAddr)), &(pOv.addrLen), &(pOv.ov), NULL);
 	}
 	return true;
 }

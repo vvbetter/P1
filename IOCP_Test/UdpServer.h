@@ -35,6 +35,6 @@ private:
 	USHORT port;
 
 	volatile unsigned int n;
-
+	UDPSERVER_OVERLAPPED * sOV;
 };
 
